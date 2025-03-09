@@ -9,6 +9,7 @@ import { StatusBar } from 'expo-status-bar';
 import { Pressable, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
+import { CalendarBar } from '~/components/CalendarBar';
 import { ThemeToggle } from '~/components/ThemeToggle';
 import { cn } from '~/lib/cn';
 import { useColorScheme, useInitialAndroidBarSync } from '~/lib/useColorScheme';
@@ -55,12 +56,10 @@ const SCREEN_OPTIONS = {
 } as const;
 
 const INDEX_OPTIONS = {
-  headerLargeTitle: true,
-  title: 'NativeWindUI',
-  headerRight: () => <SettingsIcon />,
+  header: () => <CalendarBar />,
 } as const;
 
-function SettingsIcon() {
+export function SettingsIcon() {
   const { colors } = useColorScheme();
   return (
     <Link href="/modal" asChild>
