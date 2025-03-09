@@ -11,6 +11,7 @@
     },
     "plugins": [
       "expo-router",
+      "expo-av",
       [
         "@react-native-google-signin/google-signin",
         {
@@ -30,14 +31,13 @@
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
-    "assetBundlePatterns": [
-      "**/*"
-    ],
+    "assetBundlePatterns": ["**/*"],
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.danielcswe.echojournal",
       "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSMicrophoneUsageDescription": "Allow Echo to access your microphone."
       }
     },
     "android": {
