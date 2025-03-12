@@ -14,11 +14,14 @@ export default function Quote() {
 
   return (
     <View className="my-6 mt-4 flex flex-row">
-      <View className="mr-3 w-1 rounded-full bg-stone-400" />
-
+      <View className="mr-3 w-1 rounded-full bg-stone-400 dark:bg-stone-500" />
       <View className="flex-1">
-        <Text className="mb-1 text-base italic text-stone-700">"{currentQuote.q}"</Text>
-        <Text className="text-right text-sm text-stone-500">— {currentQuote.a}</Text>
+        <Text className="mb-1 text-base italic text-stone-700 dark:text-stone-300">
+          "{currentQuote.q}"
+        </Text>
+        <Text className="text-right text-sm text-stone-500 dark:text-stone-400">
+          — {currentQuote.a}
+        </Text>
       </View>
     </View>
   );

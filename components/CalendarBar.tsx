@@ -52,8 +52,8 @@ export function CalendarBar() {
     return `${dayName} ${monthName} ${date} ${year}`;
   }, []);
   return (
-    <View className="h-36 border-b border-b-[#E7E1DE] bg-[#F1EFEE] px-8 pt-16">
-      <View className="mb-1 flex-row items-center justify-between">
+    <View className="h-36 border-b border-b-[#E7E1DE] bg-[#F1EFEE] px-8 pt-16 dark:border-b-stone-700 dark:bg-stone-800">
+      <View className="mb-2 flex-row items-center justify-between">
         {weekDays.map((day, index) => (
           <Day
             key={index}
@@ -64,7 +64,9 @@ export function CalendarBar() {
           />
         ))}
       </View>
-      <Text className="text-center text-xs uppercase text-stone-500">{formattedDate}</Text>
+      <Text className="text-center text-xs uppercase text-stone-500 dark:text-stone-400">
+        {formattedDate}
+      </Text>
     </View>
   );
 }
@@ -79,19 +81,19 @@ type DayProps = {
 function Day({ currentDay, day, dayName, written }: DayProps) {
   return (
     <View className="items-center">
-      <Text className="mb-1 text-xs text-stone-500">{dayName}</Text>
+      <Text className="mb-1 text-xs text-stone-500 dark:text-stone-400">{dayName}</Text>
       <View
         className={cn(
           'flex aspect-square size-8 items-center justify-center rounded-full',
-          currentDay && 'bg-stone-900',
-          written && 'border-2 border-stone-500/30',
-          currentDay && written && 'border-emerald-200'
+          currentDay && 'bg-stone-500 dark:bg-stone-700',
+          written && 'border-2 border-stone-500/30 dark:border-stone-600/40',
+          currentDay && written && 'border-emerald-300 dark:border-emerald-800'
         )}>
         <Text
           className={cn(
             'text-md font-semibold',
-            currentDay ? 'text-white' : 'text-stone-900',
-            currentDay && written && 'text-emerald-300'
+            currentDay ? 'text-white' : 'text-stone-900 dark:text-stone-100',
+            currentDay && written && 'text-emerald-300 dark:text-emerald-400'
           )}>
           {day}
         </Text>

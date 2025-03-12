@@ -1,6 +1,6 @@
+import { Recording } from 'expo-av/build/Audio';
 import { useRef, useEffect } from 'react';
 import { Animated } from 'react-native';
-import { Recording } from 'expo-av/build/Audio';
 
 interface VisualizerCircleProps {
   isRecording: boolean;
@@ -26,7 +26,7 @@ export function VisualizerCircle({ isRecording, recording, metering }: Visualize
 
         if (normalizedValue > 0.05) {
           const newSize = BASE_SIZE + normalizedValue * 70; // 200 to 320 based on volume
-          
+
           Animated.spring(animatedSize, {
             toValue: newSize,
             useNativeDriver: false,
@@ -47,7 +47,7 @@ export function VisualizerCircle({ isRecording, recording, metering }: Visualize
 
   return (
     <Animated.View
-      className="rounded-full border-2 border-green-300 bg-green-100"
+      className="rounded-full border-2 border-green-300 bg-green-100 dark:border-green-700 dark:bg-green-900/40"
       style={{
         width: animatedSize,
         height: animatedSize,

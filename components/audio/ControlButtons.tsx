@@ -46,7 +46,7 @@ export function ControlButtons({
     <View className="mb-10 flex-row items-center justify-between px-6">
       <TouchableOpacity
         onPress={handleCancelPress}
-        className="flex size-16 items-center justify-center rounded-full bg-stone-500"
+        className="flex size-16 items-center justify-center rounded-full bg-stone-500 dark:bg-stone-600"
         activeOpacity={0.8}>
         <Feather name="x" size={32} color="white" />
       </TouchableOpacity>
@@ -54,7 +54,7 @@ export function ControlButtons({
       <TouchableOpacity
         onPress={isRecording ? onStop : onStart}
         className={`flex size-16 items-center justify-center rounded-full ${
-          isRecording ? 'bg-red-500' : 'bg-stone-500'
+          isRecording ? 'bg-red-500 dark:bg-red-600' : 'bg-stone-500 dark:bg-stone-600'
         }`}
         activeOpacity={0.8}>
         <Ionicons name={isRecording ? 'square' : 'mic'} size={32} color="white" />
