@@ -1,12 +1,16 @@
-import { useMemo } from 'react';
-import { View } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useRouter } from 'expo-router';
+import { useMemo, useState, useEffect } from 'react';
+import { View, Pressable } from 'react-native';
 
 import { Text } from './nativewindui/Text';
 
 import { cn } from '~/lib/cn';
 
 export function CalendarBar() {
+  const router = useRouter();
   const today = new Date();
+  const [writtenDays, setWrittenDays] = useState<Record<string, boolean>>({});
 
   const weekDays = useMemo(() => {
     const currentDay = today.getDay(); // 0 = Sunday, 1 = Monday, etc.
@@ -18,14 +22,41 @@ export function CalendarBar() {
       const date = new Date(startOfWeek);
       date.setDate(startOfWeek.getDate() + i);
 
+      // Format date as YYYY-MM-DD for consistent reference
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      const formattedDate = `${year}-${month}-${day}`;
+
       return {
         date,
         dayNum: date.getDate(),
         dayName: ['S', 'M', 'T', 'W', 'T', 'F', 'S'][i],
         isCurrentDay: date.toDateString() === today.toDateString(),
+        formattedDate,
       };
     });
   }, []);
+
+  // Check which days have journal entries
+  useEffect(() => {
+    const checkJournalEntries = async () => {
+      try {
+        const entries: Record<string, boolean> = {};
+
+        for (const day of weekDays) {
+          const journalEntry = await AsyncStorage.getItem(`journal_entry_${day.formattedDate}`);
+          entries[day.formattedDate] = !!journalEntry && journalEntry.trim().length > 0;
+        }
+
+        setWrittenDays(entries);
+      } catch (error) {
+        console.error('Failed to check journal entries:', error);
+      }
+    };
+
+    checkJournalEntries();
+  }, [weekDays]);
 
   const formattedDate = useMemo(() => {
     const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -60,7 +91,17 @@ export function CalendarBar() {
             day={day.dayNum.toString()}
             dayName={day.dayName}
             currentDay={day.isCurrentDay}
-            written={index % 2 === 0}
+            written={writtenDays[day.formattedDate]}
+            onPress={() => {
+              router.push({
+                pathname: '/journal/[day]',
+                params: {
+                  day: day.formattedDate,
+                  isNew: !writtenDays[day.formattedDate] ? 'true' : 'false',
+                },
+              });
+              console.log(`Navigating to journal entry for: ${day.formattedDate}`);
+            }}
           />
         ))}
       </View>
@@ -76,11 +117,13 @@ type DayProps = {
   dayName: string;
   currentDay?: boolean;
   written?: boolean;
+  formattedDate?: string;
+  onPress?: () => void;
 };
 
-function Day({ currentDay, day, dayName, written }: DayProps) {
+function Day({ currentDay, day, dayName, written, onPress }: DayProps) {
   return (
-    <View className="items-center">
+    <Pressable onPress={onPress} className="items-center">
       <Text className="mb-1 text-xs text-stone-500 dark:text-stone-400">{dayName}</Text>
       <View
         className={cn(
@@ -98,6 +141,6 @@ function Day({ currentDay, day, dayName, written }: DayProps) {
           {day}
         </Text>
       </View>
-    </View>
+    </Pressable>
   );
 }

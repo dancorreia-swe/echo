@@ -1,5 +1,7 @@
 import * as FileSystem from 'expo-file-system';
 
+const WHISPER_API = process.env.WHISPER_API || 'http://localhost:3000';
+
 type TranscribeConfig = {
   apiKey: string;
   model?: string;
@@ -25,20 +27,16 @@ export async function transcribe(audioUri: string, config?: TranscribeConfig): P
       throw new Error('Audio file does not exist');
     }
 
-    // Create FormData object
     const formData = new FormData();
 
-    // Get file extension from URI
     const fileExtension = audioUri.split('.').pop() || 'wav';
 
-    // Append the file directly
     formData.append('audio', {
       uri: audioUri,
       name: `audio.${fileExtension}`,
       type: `audio/${fileExtension}`,
     } as any);
 
-    // Append other configuration options
     if (config) {
       if (config.apiKey) formData.append('apiKey', config.apiKey);
       if (config.model) formData.append('model', config.model);
@@ -49,12 +47,13 @@ export async function transcribe(audioUri: string, config?: TranscribeConfig): P
         formData.append('formatToMarkdown', config.formatToMarkdown.toString());
     }
 
-    const response = await fetch('http://localhost:3000/whisper', {
+    const response = await fetch(`${WHISPER_API}/whisper`, {
       method: 'POST',
       body: formData,
     });
 
     const data = await response.json();
+    console.log(data);
 
     if (!data.journal) {
       throw new Error('Failed to transcribe audio');

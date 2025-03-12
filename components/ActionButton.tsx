@@ -62,8 +62,23 @@ export default function ActionButton() {
     if (isExpanded) {
       toggleExpand();
     } else {
-      // Navigate to audio entry page
-      router.push('/audio-entry');
+      if (selectedOption === 'journal') {
+        // Format date as YYYY-MM-DD for consistent reference using local timezone
+        const today = new Date();
+        const year = today.getFullYear();
+        const month = String(today.getMonth() + 1).padStart(2, '0'); // Months are 0-indexed
+        const day = String(today.getDate()).padStart(2, '0');
+        const formattedDate = `${year}-${month}-${day}`;
+
+        router.push({
+          pathname: '/journal/[day]',
+          params: {
+            day: formattedDate,
+            isNew: 'true',
+          },
+        });
+        console.log(`Navigating to new journal entry with day: ${formattedDate}`);
+      } else router.push('/audio-entry');
     }
   };
 
@@ -119,7 +134,7 @@ export default function ActionButton() {
         <Animated.View
           style={{
             position: 'absolute',
-            bottom: 4, // Fixed position from bottom
+            bottom: 4,
             right: 0,
             opacity: animation,
             transform: [{ translateY: featherTranslateY }],

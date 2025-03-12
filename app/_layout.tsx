@@ -42,6 +42,7 @@ export default function RootLayout() {
                 <Stack.Screen name="modal" options={MODAL_OPTIONS} />
                 <Stack.Screen name="(audio)/audio-entry" options={{ headerShown: false }} />
                 <Stack.Screen name="(audio)/audio-processing" options={{ headerShown: false }} />
+                <Stack.Screen name="journal/[day]" options={{ headerShown: false }} />
               </Stack>
             </NavThemeProvider>
           </ActionSheetProvider>
