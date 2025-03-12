@@ -14,7 +14,7 @@ interface CachedQuotesData {
 }
 
 const QUOTES_CACHE_KEY = 'cached_quotes';
-const CACHE_DURATION = 60 * 60 * 1000; // 1 hour in milliseconds
+const CACHE_DURATION = 60 * 60 * 1000 * 24 * 7; // 7 days
 
 export function useRandomQuote() {
   const [quotes, setQuotes] = useState<Quote[]>([]);
