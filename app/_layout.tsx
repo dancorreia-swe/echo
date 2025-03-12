@@ -40,7 +40,8 @@ export default function RootLayout() {
               <Stack screenOptions={SCREEN_OPTIONS}>
                 <Stack.Screen name="index" options={INDEX_OPTIONS} />
                 <Stack.Screen name="modal" options={MODAL_OPTIONS} />
-                <Stack.Screen name="audio-entry" options={AUDIO_ENTRY_OPTIONS} />
+                <Stack.Screen name="(audio)/audio-entry" options={{ headerShown: false }} />
+                <Stack.Screen name="(audio)/audio-processing" options={{ headerShown: false }} />
               </Stack>
             </NavThemeProvider>
           </ActionSheetProvider>
@@ -58,10 +59,6 @@ const SCREEN_OPTIONS = {
 
 const INDEX_OPTIONS = {
   header: () => <CalendarBar />,
-} as const;
-
-const AUDIO_ENTRY_OPTIONS = {
-  headerShown: false,
 } as const;
 
 export function SettingsIcon() {
