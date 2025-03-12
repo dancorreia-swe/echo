@@ -7,7 +7,7 @@ interface ControlButtonsProps {
   isRecording: boolean;
   isPaused?: boolean;
   onStart: () => Promise<void>;
-  onStop: () => Promise<string | undefined | null>;
+  onStop: () => Promise<string | undefined | null | void>;
   onDiscard: () => Promise<void>;
   onCancelDiscard: () => void;
   onPause: () => Promise<void>;

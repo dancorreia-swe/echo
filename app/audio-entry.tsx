@@ -48,6 +48,17 @@ export default function AudioEntryScreen() {
     router.back();
   };
 
+  const handleStopRecording = async () => {
+    const uri = await stopRecording();
+
+    if (uri) {
+      router.push({
+        pathname: '/audio-processing',
+        params: { audioUri: uri },
+      });
+    }
+  };
+
   const handleCancelDiscard = () => {
     if (isRecording && wasRecordingRef.current) {
       resumeRecording();
@@ -79,7 +90,7 @@ export default function AudioEntryScreen() {
           isRecording={isRecording}
           isPaused={isPaused}
           onStart={startRecording}
-          onStop={stopRecording}
+          onStop={handleStopRecording}
           onDiscard={handleDiscard}
           onCancelDiscard={handleCancelDiscard}
           onPause={pauseRecording}
