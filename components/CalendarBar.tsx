@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useRouter } from 'expo-router';
-import { useMemo, useState, useEffect } from 'react';
+import { useFocusEffect, useRouter } from 'expo-router';
+import { useMemo, useState, useEffect, useCallback } from 'react';
 import { View, Pressable } from 'react-native';
 
 import { Text } from './nativewindui/Text';
@@ -13,7 +13,7 @@ export function CalendarBar() {
   const [writtenDays, setWrittenDays] = useState<Record<string, boolean>>({});
 
   const weekDays = useMemo(() => {
-    const currentDay = today.getDay(); // 0 = Sunday, 1 = Monday, etc.
+    const currentDay = today.getDay();
 
     const startOfWeek = new Date(today);
     startOfWeek.setDate(today.getDate() - currentDay);
@@ -22,7 +22,6 @@ export function CalendarBar() {
       const date = new Date(startOfWeek);
       date.setDate(startOfWeek.getDate() + i);
 
-      // Format date as YYYY-MM-DD for consistent reference
       const year = date.getFullYear();
       const month = String(date.getMonth() + 1).padStart(2, '0');
       const day = String(date.getDate()).padStart(2, '0');
@@ -38,25 +37,31 @@ export function CalendarBar() {
     });
   }, []);
 
-  // Check which days have journal entries
-  useEffect(() => {
-    const checkJournalEntries = async () => {
-      try {
-        const entries: Record<string, boolean> = {};
+  const checkJournalEntries = useCallback(async () => {
+    try {
+      const entries: Record<string, boolean> = {};
 
-        for (const day of weekDays) {
-          const journalEntry = await AsyncStorage.getItem(`journal_entry_${day.formattedDate}`);
-          entries[day.formattedDate] = !!journalEntry && journalEntry.trim().length > 0;
-        }
-
-        setWrittenDays(entries);
-      } catch (error) {
-        console.error('Failed to check journal entries:', error);
+      for (const day of weekDays) {
+        const journalEntry = await AsyncStorage.getItem(`journal_entry_${day.formattedDate}`);
+        entries[day.formattedDate] = !!journalEntry && journalEntry.trim().length > 0;
       }
-    };
 
-    checkJournalEntries();
+      setWrittenDays(entries);
+    } catch (error) {
+      console.error('Failed to check journal entries:', error);
+    }
   }, [weekDays]);
+
+  useEffect(() => {
+    checkJournalEntries();
+  }, [checkJournalEntries]);
+
+  useFocusEffect(
+    useCallback(() => {
+      checkJournalEntries();
+      return () => {};
+    }, [checkJournalEntries])
+  );
 
   const formattedDate = useMemo(() => {
     const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -83,7 +88,9 @@ export function CalendarBar() {
     return `${dayName} ${monthName} ${date} ${year}`;
   }, []);
   return (
-    <View className="h-36 border-b border-b-[#E7E1DE] bg-[#F1EFEE] px-8 pt-16 dark:border-b-stone-700 dark:bg-stone-800">
+    <Pressable
+      onLongPress={() => router.push('journal/calendar-view')}
+      className="h-36 border-b border-b-[#E7E1DE] bg-[#F1EFEE] px-8 pt-16 dark:border-b-stone-700 dark:bg-stone-800">
       <View className="mb-2 flex-row items-center justify-between">
         {weekDays.map((day, index) => (
           <Day
@@ -108,7 +115,7 @@ export function CalendarBar() {
       <Text className="text-center text-xs uppercase text-stone-500 dark:text-stone-400">
         {formattedDate}
       </Text>
-    </View>
+    </Pressable>
   );
 }
 
