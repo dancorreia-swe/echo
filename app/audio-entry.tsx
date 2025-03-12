@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import { useState, useRef, useEffect } from 'react';
+import { useRef, useEffect } from 'react';
 import { View } from 'react-native';
 
 import { ControlButtons } from '~/components/audio/ControlButtons';
@@ -9,6 +9,7 @@ import { Text } from '~/components/nativewindui/Text';
 import { useAudioRecording } from '~/hooks/useAudioRecording';
 
 export default function AudioEntryScreen() {
+  const wasRecordingRef = useRef<boolean>(false);
   const {
     recording,
     isRecording,
@@ -22,7 +23,17 @@ export default function AudioEntryScreen() {
     discardRecording,
   } = useAudioRecording();
 
-  const wasRecordingRef = useRef<boolean>(false);
+  function getInstructionText(isRecording: boolean, isPaused: boolean): string {
+    if (!isRecording) {
+      return 'Tap the microphone to start recording';
+    }
+
+    if (isPaused) {
+      return 'Recording paused - tap play to resume';
+    }
+
+    return 'Speak your thoughts for today';
+  }
 
   useEffect(() => {
     if (isPaused) {
@@ -49,12 +60,10 @@ export default function AudioEntryScreen() {
       <View className="flex-1 justify-between p-6 pt-20">
         <View>
           <Text className="mb-2 text-center text-xl font-semibold text-stone-900 dark:text-stone-100">
-            {isRecording ? 'Recording...' : 'Ready to Record'}
+            {!isRecording ? 'Ready to Record' : isPaused ? 'Paused' : 'Recording...'}
           </Text>
           <Text className="text-center text-gray-500 dark:text-gray-400">
-            {isRecording
-              ? 'Speak your thoughts for today'
-              : 'Tap the microphone to start recording'}
+            {getInstructionText(isRecording, isPaused)}
           </Text>
         </View>
 
@@ -68,11 +77,13 @@ export default function AudioEntryScreen() {
         {/* Control Buttons */}
         <ControlButtons
           isRecording={isRecording}
+          isPaused={isPaused}
           onStart={startRecording}
           onStop={stopRecording}
           onDiscard={handleDiscard}
           onCancelDiscard={handleCancelDiscard}
           onPause={pauseRecording}
+          onResume={resumeRecording}
         />
       </View>
     </View>
