@@ -1,4 +1,4 @@
-import { Ionicons, FontAwesome } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { BlurView } from 'expo-blur';
 import { useLocalSearchParams, router } from 'expo-router';
@@ -10,11 +10,14 @@ import {
   KeyboardAvoidingView,
   Platform,
   StatusBar,
-  Image,
+  Modal,
+  Share,
+  Alert,
+  TouchableWithoutFeedback,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ActivityIndicator } from '~/components/nativewindui/ActivityIndicator';
 
+import { ActivityIndicator } from '~/components/nativewindui/ActivityIndicator';
 import { Text } from '~/components/nativewindui/Text';
 import { TextInput } from '~/components/nativewindui/TextInput';
 
@@ -30,6 +33,7 @@ export default function JournalEntryScreen() {
   const [isSaving, setIsSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [autoSaveTimer, setAutoSaveTimer] = useState<NodeJS.Timeout | null>(null);
+  const [menuVisible, setMenuVisible] = useState(false);
 
   const formatTime = () => {
     const now = new Date();
@@ -95,30 +99,24 @@ export default function JournalEntryScreen() {
         }
       } catch (error) {
         console.error('Failed to load journal entry:', error);
-        // Fallback to content from params if storage fails
         if (content) {
           setJournalContent(content);
         }
       }
     };
 
-    // Always load the journal entry when the component mounts or day changes
     loadJournalEntry();
 
     if (isNew === 'true') {
-      // Give focus to title for new entries
       setJournalTitle('');
     }
   }, [day, content, isNew]);
 
-  // Set up auto-save functionality
   useEffect(() => {
-    // Clear any existing timer when content changes
     if (autoSaveTimer) {
       clearTimeout(autoSaveTimer);
     }
 
-    // Set a new timer to save after 2 seconds of inactivity
     if (journalContent.length > 0) {
       const timer = setTimeout(() => {
         handleSave();
@@ -127,7 +125,6 @@ export default function JournalEntryScreen() {
       setAutoSaveTimer(timer);
     }
 
-    // Clean up timer on unmount
     return () => {
       if (autoSaveTimer) {
         clearTimeout(autoSaveTimer);
@@ -150,9 +147,47 @@ export default function JournalEntryScreen() {
       console.log(`Journal entry saved for day: ${day}`);
     } catch (error) {
       console.error('Failed to save journal entry:', error);
-      // You could add an error notification here
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleDelete = () => {
+    setMenuVisible(false);
+    Alert.alert(
+      'Delete Note',
+      'Are you sure you want to delete this note? This action cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await AsyncStorage.removeItem(`journal_entry_${day}`);
+              await AsyncStorage.removeItem(`journal_title_${day}`);
+              router.back();
+            } catch (error) {
+              console.error('Failed to delete journal entry:', error);
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const handleShare = async () => {
+    setMenuVisible(false);
+    try {
+      const title = journalTitle || 'Journal Entry';
+      const message = `${title}\n\n${journalContent}\n\n${formattedDate.fullDate}`;
+
+      await Share.share({
+        message,
+        title,
+      });
+    } catch (error) {
+      console.error('Error sharing note:', error);
     }
   };
 
@@ -172,20 +207,68 @@ export default function JournalEntryScreen() {
             </TouchableOpacity>
 
             <View className="flex-row space-x-3">
-              {isSaving && (
+              {isSaving ? (
                 <View className="flex h-10 w-10 items-center justify-center rounded-full bg-[#F1EFEE] dark:bg-stone-800">
                   <ActivityIndicator size="small" color="#555" />
                 </View>
-              )}
-              {saved && (
+              ) : saved ? (
                 <View className="flex h-10 w-10 items-center justify-center rounded-full bg-[#F1EFEE] dark:bg-stone-800">
-                  <Ionicons name="checkmark-circle" size={20} color="#4CAF50" />
+                  <Ionicons name="cloud-done-outline" size={20} color="#4CAF50" />
+                </View>
+              ) : (
+                <View className="flex h-10 w-10 items-center justify-center rounded-full bg-[#F1EFEE] dark:bg-stone-800">
+                  <Ionicons name="cloud-outline" size={20} color="#555" />
                 </View>
               )}
+
+              <View>
+                <TouchableOpacity
+                  onPress={() => setMenuVisible(!menuVisible)}
+                  className="flex h-10 w-10 items-center justify-center rounded-full bg-[#F1EFEE] dark:bg-stone-800">
+                  <Ionicons name="ellipsis-vertical" size={20} color="#555" />
+                </TouchableOpacity>
+
+                {menuVisible && (
+                  <Modal
+                    transparent
+                    visible={menuVisible}
+                    animationType="fade"
+                    onRequestClose={() => setMenuVisible(false)}>
+                    <TouchableWithoutFeedback onPress={() => setMenuVisible(false)}>
+                      <View className="flex-1">
+                        <View className="absolute right-4 top-[102px] z-50 w-48 rounded-lg bg-white shadow-xl dark:bg-stone-800">
+                          <TouchableOpacity
+                            onPress={handleDelete}
+                            className="flex-row items-center py-3 pl-4 pr-6">
+                            <View className="mr-3">
+                              <Ionicons name="trash-outline" size={18} color="#FF5252" />
+                            </View>
+                            <Text className="text-sm font-medium text-stone-800 dark:text-stone-200">
+                              Delete note
+                            </Text>
+                          </TouchableOpacity>
+
+                          <View className="h-px bg-gray-200 dark:bg-stone-700" />
+
+                          <TouchableOpacity
+                            onPress={handleShare}
+                            className="flex-row items-center py-3 pl-4 pr-6">
+                            <View className="mr-3">
+                              <Ionicons name="share-outline" size={18} color="#555" />
+                            </View>
+                            <Text className="text-sm font-medium text-stone-800 dark:text-stone-200">
+                              Share note
+                            </Text>
+                          </TouchableOpacity>
+                        </View>
+                      </View>
+                    </TouchableWithoutFeedback>
+                  </Modal>
+                )}
+              </View>
             </View>
           </View>
 
-          {/* Date Indicator */}
           <View className="flex-row items-center px-5 py-2 opacity-70">
             <Text className="text-sm text-stone-500 dark:text-stone-400">{formattedDate.year}</Text>
             <Text className="mx-2 text-stone-400">•</Text>
@@ -197,29 +280,26 @@ export default function JournalEntryScreen() {
           </View>
 
           <ScrollView className="flex-1 px-5 pt-2">
-            {/* Title Input */}
             <TextInput
               value={journalTitle}
               onChangeText={setJournalTitle}
               placeholder="Enter a title..."
               className="mb-4 border-0 bg-[#F1EFEE] pb-2 text-3xl font-bold text-stone-800 dark:bg-stone-900 dark:text-stone-200"
-              placeholderTextColor="rgba(100, 116, 139, 0.6)"
+              placeholderTextColor="rgba(41, 37, 36)"
               autoFocus={isNew === 'true'}
             />
 
-            {/* Content Input */}
             <TextInput
               multiline
               value={journalContent}
               onChangeText={setJournalContent}
               placeholder="Today marks the beginning of my journey..."
               className="min-h-full border-0 bg-[#f1efee] text-lg leading-relaxed text-stone-800 dark:bg-stone-900 dark:text-stone-300"
-              placeholderTextColor="rgba(100, 116, 139, 0.6)"
+              placeholderTextColor="rgba(41, 37, 36)"
               textAlignVertical="top"
             />
           </ScrollView>
 
-          {/* Footer Action Buttons */}
           <View className="absolute bottom-0 left-0 right-0">
             <BlurView
               intensity={20}
