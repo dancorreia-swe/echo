@@ -1,7 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useFocusEffect } from '@react-navigation/native';
 import { router } from 'expo-router';
-import { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   View,
   TouchableOpacity,
@@ -57,8 +58,7 @@ export default function CalendarViewScreen() {
     const firstDay = new Date(year, month, 1);
     const lastDay = new Date(year, month + 1, 0);
     const daysCount = lastDay.getDate();
-
-    let firstDayOfWeek = firstDay.getDay();
+    const firstDayOfWeek = firstDay.getDay();
 
     const days = [];
 
@@ -101,64 +101,74 @@ export default function CalendarViewScreen() {
     return `${year}-${month}-${day}`;
   }
 
+  const loadJournalData = useCallback(async () => {
+    try {
+      setLoading(true);
+      const entries = {};
+      const journalEntries: any[] = [];
+
+      const keys = await AsyncStorage.getAllKeys();
+      const journalKeys = keys.filter((key) => key.startsWith('journal_entry_'));
+
+      for (const key of journalKeys) {
+        const date = key.replace('journal_entry_', '');
+        const journalEntry = await AsyncStorage.getItem(key);
+        const titleKey = `journal_title_${date}`;
+        const title = (await AsyncStorage.getItem(titleKey)) || 'Untitled';
+
+        if (journalEntry && journalEntry.trim().length > 0) {
+          entries[date] = true;
+
+          const [year, month, day] = date.split('-').map((num) => parseInt(num, 10));
+          const entryDate = new Date(year, month - 1, day);
+
+          if (
+            entryDate.getMonth() === currentMonth.getMonth() &&
+            entryDate.getFullYear() === currentMonth.getFullYear()
+          ) {
+            journalEntries.push({
+              id: date,
+              date,
+              title,
+              preview: journalEntry.substring(0, 80) + (journalEntry.length > 80 ? '...' : ''),
+              formattedDate: entryDate.toLocaleDateString(undefined, {
+                month: 'short',
+                day: 'numeric',
+              }),
+            });
+          }
+        }
+      }
+
+      // Sort entries by date (newest first)
+      journalEntries.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+      setWrittenDays(entries);
+      setRecentEntries(journalEntries);
+      setLoading(false);
+    } catch (error) {
+      console.error('Failed to load journal data:', error);
+      setLoading(false);
+    }
+  }, [currentMonth]);
+
   useEffect(() => {
     if (initialRender) {
       setInitialRender(false);
       return;
     }
 
-    const loadJournalData = async () => {
-      try {
-        setLoading(true);
-        const entries = {};
-        const journalEntries: any[] = [];
-
-        const keys = await AsyncStorage.getAllKeys();
-        const journalKeys = keys.filter((key) => key.startsWith('journal_entry_'));
-
-        for (const key of journalKeys) {
-          const date = key.replace('journal_entry_', '');
-          const journalEntry = await AsyncStorage.getItem(key);
-          const titleKey = `journal_title_${date}`;
-          const title = (await AsyncStorage.getItem(titleKey)) || 'Untitled';
-
-          if (journalEntry && journalEntry.trim().length > 0) {
-            entries[date] = true;
-
-            // Only add to recent entries if it's from current month
-            const entryDate = new Date(date);
-            if (
-              entryDate.getMonth() === currentMonth.getMonth() &&
-              entryDate.getFullYear() === currentMonth.getFullYear()
-            ) {
-              journalEntries.push({
-                id: date,
-                date,
-                title,
-                preview: journalEntry.substring(0, 80) + (journalEntry.length > 80 ? '...' : ''),
-                formattedDate: entryDate.toLocaleDateString(undefined, {
-                  month: 'short',
-                  day: 'numeric',
-                }),
-              });
-            }
-          }
-        }
-
-        // Sort entries by date (newest first)
-        journalEntries.sort((a, b) => new Date(b.date) - new Date(a.date));
-
-        setWrittenDays(entries);
-        setRecentEntries(journalEntries);
-        setLoading(false);
-      } catch (error) {
-        console.error('Failed to load journal data:', error);
-        setLoading(false);
-      }
-    };
-
     loadJournalData();
-  }, [currentMonth, initialRender]);
+  }, [currentMonth, initialRender, loadJournalData]);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (!initialRender) {
+        loadJournalData();
+      }
+      return () => {};
+    }, [loadJournalData, initialRender])
+  );
 
   const goToPreviousMonth = () => {
     const newDate = new Date(currentMonth);

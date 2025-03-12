@@ -12,7 +12,6 @@ export function VisualizerCircle({ isRecording, recording, metering }: Visualize
   const animatedSize = useRef(new Animated.Value(200)).current;
   const BASE_SIZE = 200;
 
-  // Update circle size based on audio level
   useEffect(() => {
     if (isRecording && recording) {
       Animated.spring(animatedSize, {

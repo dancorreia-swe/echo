@@ -33,7 +33,6 @@ export function useRandomQuote() {
           const { quotes, timestamp }: CachedQuotesData = JSON.parse(cachedData);
           const now = Date.now();
 
-          // If cache is still valid (less than 1 hour old)
           if (now - timestamp < CACHE_DURATION) {
             console.log('Using cached quotes');
             setQuotes(quotes);
@@ -53,7 +52,6 @@ export function useRandomQuote() {
         const data: Quote[] = await response.json();
         setQuotes(data);
 
-        // Cache the new quotes with current timestamp
         const cacheData: CachedQuotesData = {
           quotes: data,
           timestamp: Date.now(),

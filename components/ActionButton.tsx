@@ -63,10 +63,10 @@ export default function ActionButton() {
       toggleExpand();
     } else {
       if (selectedOption === 'journal') {
-        // Format date as YYYY-MM-DD for consistent reference using local timezone
+
         const today = new Date();
         const year = today.getFullYear();
-        const month = String(today.getMonth() + 1).padStart(2, '0'); // Months are 0-indexed
+        const month = String(today.getMonth() + 1).padStart(2, '0');
         const day = String(today.getDate()).padStart(2, '0');
         const formattedDate = `${year}-${month}-${day}`;
 
@@ -82,7 +82,6 @@ export default function ActionButton() {
     }
   };
 
-  // Function to collapse the menu
   const collapseMenu = useCallback(() => {
     if (isExpanded) {
       setIsExpanded(false);
@@ -98,6 +97,7 @@ export default function ActionButton() {
   return (
     <View className="absolute bottom-8 right-8">
       {/* Overlay to detect outside clicks */}
+
       {isExpanded && (
         <TouchableOpacity
           activeOpacity={0}

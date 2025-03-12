@@ -30,7 +30,6 @@ export function useAudioRecording() {
   // Start monitoring audio levels when recording
   useEffect(() => {
     if (isRecording && recording && !isPaused) {
-      // Start metering interval to measure audio levels
       meteringIntervalRef.current = setInterval(async () => {
         try {
           if (!recording) return;
