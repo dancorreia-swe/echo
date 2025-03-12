@@ -52,9 +52,13 @@ export default function AudioEntryScreen() {
     const uri = await stopRecording();
 
     if (uri) {
+      const today = new Date().toISOString().split('T')[0];
       router.push({
         pathname: '/audio-processing',
-        params: { audioUri: uri },
+        params: {
+          audioUri: uri,
+          date: today,
+        },
       });
     }
   };

@@ -1,8 +1,7 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { View, ActivityIndicator } from 'react-native';
-import Animated, {
+import { View, ActivityIndicator, SafeAreaView, StatusBar } from 'react-native';
+import {
   useAnimatedStyle,
   useSharedValue,
   withRepeat,
@@ -14,7 +13,7 @@ import { Text } from '~/components/nativewindui/Text';
 import { transcribe } from '~/lib/speech-to-text';
 
 export default function AudioProcessingScreen() {
-  const { audioUri } = useLocalSearchParams<{ audioUri: string }>();
+  const { audioUri, date } = useLocalSearchParams<{ audioUri: string; date: string }>();
   const [status, setStatus] = useState('Processing your audio...');
   const [error, setError] = useState<string | null>(null);
 
@@ -52,36 +51,19 @@ export default function AudioProcessingScreen() {
         console.log(transcription);
         setStatus('Creating your journal entry...');
 
-        const timestamp = Date.now().toString();
+        const entryDate = date || new Date().toISOString().split('T')[0];
 
-        try {
-          await AsyncStorage.setItem(`journal_entry_${timestamp}`, transcription);
-          console.log(`Saved transcription to AsyncStorage with key: journal_entry_${timestamp}`);
-
-          setTimeout(() => {
-            router.replace({
-              pathname: '/journal/[day]',
-              params: {
-                day: timestamp,
-                content: transcription,
-                isNew: 'true',
-              },
-            });
-          }, 1000);
-        } catch (storageError) {
-          console.error('Failed to save transcription to AsyncStorage:', storageError);
-          // Still navigate even if storage fails
-          setTimeout(() => {
-            router.replace({
-              pathname: '/journal/[day]',
-              params: {
-                day: timestamp,
-                content: transcription,
-                isNew: 'true',
-              },
-            });
-          }, 1000);
-        }
+        setTimeout(() => {
+          router.replace({
+            pathname: '/journal/[day]',
+            params: {
+              day: entryDate,
+              content: transcription,
+              isNew: 'true',
+              from: 'audio-entry',
+            },
+          });
+        }, 1000);
       } catch (err) {
         setError(`Failed to process audio: ${err instanceof Error ? err.message : String(err)}`);
       }
@@ -91,32 +73,30 @@ export default function AudioProcessingScreen() {
   }, [audioUri]);
 
   return (
-    <View className="flex-1 items-center justify-center bg-white p-6 dark:bg-stone-900">
-      {error ? (
-        <View className="items-center">
-          <Text className="mb-4 text-lg font-medium text-red-500">{error}</Text>
-          <Text className="text-blue-500 underline" onPress={() => router.back()}>
-            Go Back
-          </Text>
-        </View>
-      ) : (
-        <>
-          <Animated.View
-            style={animatedStyles}
-            className="mb-8 h-40 w-40 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 opacity-80"
-          />
+    <SafeAreaView className="flex-1 bg-[#f1efee] dark:bg-stone-900">
+      <StatusBar barStyle="dark-content" backgroundColor="#f1efee" />
+      <View className="flex-1 items-center justify-center px-6">
+        {error ? (
+          <View className="items-center">
+            <Text className="mb-4 text-lg font-medium text-red-500">{error}</Text>
+            <Text className="text-blue-500 underline" onPress={() => router.back()}>
+              Go Back
+            </Text>
+          </View>
+        ) : (
+          <View className="w-full items-center justify-center">
+            <Text className="mb-6 text-center text-2xl font-semibold text-stone-800 dark:text-stone-200">
+              {status}
+            </Text>
 
-          <Text className="mb-2 text-xl font-medium text-stone-800 dark:text-stone-200">
-            {status}
-          </Text>
+            <Text className="mb-8 text-center text-stone-500 dark:text-stone-400">
+              We're turning your voice into a beautiful journal entry
+            </Text>
 
-          <Text className="text-center text-stone-500 dark:text-stone-400">
-            We're turning your voice into a beautiful journal entry
-          </Text>
-
-          <ActivityIndicator size="large" color="#8B5CF6" className="mt-8" />
-        </>
-      )}
-    </View>
+            <ActivityIndicator size="large" color="#8B5CF6" className="mt-4" />
+          </View>
+        )}
+      </View>
+    </SafeAreaView>
   );
 }

@@ -17,7 +17,7 @@ export default function ActionButton() {
       toValue,
       friction: 6,
       tension: 40,
-      useNativeDriver: false, // Set to false to allow layout animations
+      useNativeDriver: false,
     }).start();
 
     setIsExpanded(!isExpanded);
@@ -35,7 +35,7 @@ export default function ActionButton() {
 
   const backgroundHeight = animation.interpolate({
     inputRange: [0, 1],
-    outputRange: [56, 220], // Actual height values instead of scale
+    outputRange: [56, 220],
   });
 
   const backgroundOpacity = animation.interpolate({
@@ -51,7 +51,7 @@ export default function ActionButton() {
       toValue: 0,
       friction: 6,
       tension: 40,
-      useNativeDriver: false, // Match the other animation
+      useNativeDriver: false,
     }).start();
 
     console.log(`Selected option: ${option}`);

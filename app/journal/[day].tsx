@@ -22,10 +22,11 @@ import { Text } from '~/components/nativewindui/Text';
 import { TextInput } from '~/components/nativewindui/TextInput';
 
 export default function JournalEntryScreen() {
-  const { day, content, isNew } = useLocalSearchParams<{
+  const { day, content, isNew, from } = useLocalSearchParams<{
     day: string;
     content: string;
     isNew: string;
+    from: string;
   }>();
 
   const [journalContent, setJournalContent] = useState('');
@@ -34,6 +35,9 @@ export default function JournalEntryScreen() {
   const [saved, setSaved] = useState(false);
   const [autoSaveTimer, setAutoSaveTimer] = useState<NodeJS.Timeout | null>(null);
   const [menuVisible, setMenuVisible] = useState(false);
+  const [contentConflictModalVisible, setContentConflictModalVisible] = useState(false);
+  const [newContent, setNewContent] = useState('');
+  const [storedContent, setStoredContent] = useState('');
 
   const formatTime = () => {
     const now = new Date();
@@ -77,13 +81,35 @@ export default function JournalEntryScreen() {
     }
   })();
 
+  const handleContentConflict = {
+    override: () => {
+      setJournalContent(newContent);
+      handleSave();
+      setContentConflictModalVisible(false);
+    },
+    append: () => {
+      setJournalContent(storedContent + '\n\n' + newContent);
+      handleSave();
+      setContentConflictModalVisible(false);
+    },
+    discard: () => {
+      setJournalContent(storedContent);
+      setContentConflictModalVisible(false);
+    },
+  };
+
   useEffect(() => {
     const loadJournalEntry = async () => {
       try {
         const storedEntry = await AsyncStorage.getItem(`journal_entry_${day}`);
         const storedTitle = await AsyncStorage.getItem(`journal_title_${day}`);
 
-        if (storedEntry) {
+        if (storedEntry && content && storedEntry !== content) {
+          setStoredContent(storedEntry);
+          setNewContent(content);
+          setContentConflictModalVisible(true);
+          setJournalContent(storedEntry);
+        } else if (storedEntry) {
           setJournalContent(storedEntry);
         } else if (content) {
           setJournalContent(content);
@@ -107,7 +133,7 @@ export default function JournalEntryScreen() {
 
     loadJournalEntry();
 
-    if (isNew === 'true') {
+    if (isNew === 'true' && !journalTitle) {
       setJournalTitle('');
     }
   }, [day, content, isNew]);
@@ -166,7 +192,11 @@ export default function JournalEntryScreen() {
             try {
               await AsyncStorage.removeItem(`journal_entry_${day}`);
               await AsyncStorage.removeItem(`journal_title_${day}`);
-              router.back();
+              if (from === 'audio-entry') {
+                router.replace('/');
+              } else {
+                router.back();
+              }
             } catch (error) {
               console.error('Failed to delete journal entry:', error);
             }
@@ -201,7 +231,13 @@ export default function JournalEntryScreen() {
           {/* Header */}
           <View className="flex-row items-center justify-between px-4 py-2">
             <TouchableOpacity
-              onPress={() => router.back()}
+              onPress={() => {
+                if (from === 'audio-entry') {
+                  router.replace('/');
+                } else {
+                  router.back();
+                }
+              }}
               className="flex h-10 w-10 items-center justify-center rounded-full bg-[#F1EFEE] dark:bg-stone-800">
               <Ionicons name="chevron-back" size={24} color="#555" />
             </TouchableOpacity>
@@ -320,6 +356,46 @@ export default function JournalEntryScreen() {
               </View>
             </BlurView>
           </View>
+
+          {/* Content Conflict Modal */}
+          <Modal
+            transparent
+            visible={contentConflictModalVisible}
+            animationType="fade"
+            onRequestClose={() => setContentConflictModalVisible(false)}>
+            <View className="flex-1 items-center justify-center bg-black/50">
+              <View className="w-[90%] rounded-xl bg-white p-5 shadow-xl dark:bg-stone-800">
+                <Text className="mb-4 text-xl font-bold text-stone-800 dark:text-stone-200">
+                  Content Conflict
+                </Text>
+                <Text className="mb-6 text-stone-700 dark:text-stone-300">
+                  There is already saved content for this date. What would you like to do?
+                </Text>
+
+                <View className="mb-2 flex-row justify-between">
+                  <TouchableOpacity
+                    onPress={handleContentConflict.override}
+                    className="mr-2 flex-1 rounded-lg bg-blue-500 px-4 py-3">
+                    <Text className="text-center font-medium text-white">Override</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    onPress={handleContentConflict.append}
+                    className="ml-2 flex-1 rounded-lg bg-green-500 px-4 py-3">
+                    <Text className="text-center font-medium text-white">Append</Text>
+                  </TouchableOpacity>
+                </View>
+
+                <TouchableOpacity
+                  onPress={handleContentConflict.discard}
+                  className="mt-2 rounded-lg bg-stone-300 px-4 py-3 dark:bg-stone-700">
+                  <Text className="text-center font-medium text-stone-800 dark:text-stone-200">
+                    Keep Existing
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </Modal>
         </KeyboardAvoidingView>
       </SafeAreaView>
     </View>
