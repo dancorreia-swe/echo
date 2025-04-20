@@ -89,7 +89,7 @@ export function CalendarBar() {
   }, []);
   return (
     <Pressable
-      onLongPress={() => router.push('journal/calendar-view')}
+      onLongPress={() => router.push('calendar/calendar-view')}
       className="h-36 border-b border-b-[#E7E1DE] bg-[#F1EFEE] px-8 pt-16 dark:border-b-stone-700 dark:bg-stone-800">
       <View className="mb-2 flex-row items-center justify-between">
         {weekDays.map((day, index) => (

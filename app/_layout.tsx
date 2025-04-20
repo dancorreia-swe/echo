@@ -43,7 +43,7 @@ export default function RootLayout() {
                 <Stack.Screen name="(audio)/audio-entry" options={{ headerShown: false }} />
                 <Stack.Screen name="(audio)/audio-processing" options={{ headerShown: false }} />
                 <Stack.Screen name="journal/[day]" options={{ headerShown: false }} />
-                <Stack.Screen name="journal/calendar-view" options={{ headerShown: false }} />
+                <Stack.Screen name="calendar/calendar-view" options={{ headerShown: false }} />
               </Stack>
             </NavThemeProvider>
           </ActionSheetProvider>
