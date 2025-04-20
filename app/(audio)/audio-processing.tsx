@@ -1,13 +1,7 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { View, ActivityIndicator, SafeAreaView, StatusBar } from 'react-native';
-import {
-  useAnimatedStyle,
-  useSharedValue,
-  withRepeat,
-  withTiming,
-  Easing,
-} from 'react-native-reanimated';
+import { useSharedValue, withRepeat, withTiming, Easing } from 'react-native-reanimated';
 
 import { Text } from '~/components/nativewindui/Text';
 import { transcribe } from '~/lib/speech-to-text';
@@ -19,12 +13,6 @@ export default function AudioProcessingScreen() {
 
   const scale = useSharedValue(1);
   const rotation = useSharedValue(0);
-
-  const animatedStyles = useAnimatedStyle(() => {
-    return {
-      transform: [{ scale: scale.value }, { rotate: `${rotation.value}deg` }],
-    };
-  });
 
   useEffect(() => {
     scale.value = withRepeat(
