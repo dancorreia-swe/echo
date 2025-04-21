@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams } from 'expo-router';
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   View,
   ScrollView,
@@ -15,11 +15,12 @@ import { BottomToolbar } from './bottom-toolbar';
 import { ConflictModal } from './conflict-modal';
 import { useJournalEntry } from './hooks/useJournalEntry';
 import { MenuModal } from './menu-modal';
+import { MoodEmojiPicker, MoodEmojiPickerRef } from './mood-emoji-picker';
 import { SaveStatusIndicator } from './save-status-indicator';
-import { formatTime } from './utils/dateFormat';
 
 import { Text } from '~/components/nativewindui/Text';
 import { TextInput } from '~/components/nativewindui/TextInput';
+import { formatTime } from './utils/dateFormat';
 
 export default function JournalEntryScreen() {
   const params = useLocalSearchParams<{
@@ -30,12 +31,17 @@ export default function JournalEntryScreen() {
   }>();
 
   const [menuVisible, setMenuVisible] = useState(false);
+  const moodPickerRef = useRef<MoodEmojiPickerRef>(null);
 
   const {
     journalContent,
     setJournalContent,
     journalTitle,
     setJournalTitle,
+    selectedMoods,
+    selectedMoodObjects,
+    handleMoodSelect,
+    isMoodSelected,
     isSaving,
     saved,
     formattedDate,
@@ -84,22 +90,58 @@ export default function JournalEntryScreen() {
                     setMenuVisible(false);
                     handleShare();
                   }}
+                  onChangeMood={() => {
+                    setMenuVisible(false);
+                    moodPickerRef.current?.openPicker();
+                  }}
+                  hasMood={selectedMoods.length > 0}
                 />
               </View>
             </View>
           </View>
 
-          <View className="flex-row items-center px-5 py-2 opacity-70">
-            <Text className="text-sm text-stone-500 dark:text-stone-400">{formattedDate.year}</Text>
-            <Text className="mx-2 text-stone-400">•</Text>
-            <Text className="text-sm text-stone-500 dark:text-stone-400">{formatTime()}</Text>
-            <Text className="mx-2 text-stone-400">•</Text>
-            <Text className="text-sm text-stone-500 dark:text-stone-400">
-              {formattedDate.fullDate}
-            </Text>
+          <View className="flex-row items-center justify-between px-5 py-2">
+            <View className="flex-row items-center opacity-70">
+              <Text className="text-sm text-stone-500 dark:text-stone-400">
+                {formattedDate.year}
+              </Text>
+              <Text className="mx-2 text-stone-400">•</Text>
+              <Text className="text-sm text-stone-500 dark:text-stone-400">{formatTime()}</Text>
+              <Text className="mx-2 text-stone-400">•</Text>
+              <Text className="text-sm text-stone-500 dark:text-stone-400">
+                {formattedDate.fullDate}
+              </Text>
+            </View>
+
+            <MoodEmojiPicker
+              ref={moodPickerRef}
+              selectedMoods={selectedMoods}
+              onSelectMood={handleMoodSelect}
+              isMoodSelected={isMoodSelected}
+            />
           </View>
 
           <ScrollView className="flex-1 px-5 pt-2">
+            {selectedMoodObjects.length > 0 && (
+              <View className="mb-4">
+                <View className="flex-row flex-wrap">
+                  {selectedMoodObjects.map((mood, index) => (
+                    <View key={mood.key} className="mr-2 flex-row items-center">
+                      <Text className="text-md">{mood.emoji}</Text>
+                      <Text className="ml-1 text-base text-stone-600 dark:text-stone-400">
+                        {mood.label}
+                        {index < selectedMoodObjects.length - 1 ? ',' : ''}
+                      </Text>
+                    </View>
+                  ))}
+                </View>
+                <Text className="mt-1 text-sm text-stone-500 dark:text-stone-400">
+                  Today I'm feeling{' '}
+                  {selectedMoodObjects.map((m) => m.label.toLowerCase()).join(', ')}
+                </Text>
+              </View>
+            )}
+
             <TextInput
               value={journalTitle}
               onChangeText={setJournalTitle}

@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { View } from 'react-native';
 
 import ActionButton from '~/components/ActionButton';
+import FrequentMoods from '~/components/FrequentMoods';
 import Quote from '~/components/Quote';
 import { Text } from '~/components/nativewindui/Text';
 
@@ -10,6 +11,7 @@ export default function Screen() {
     <View className="flex-1 bg-white p-4 px-8 pt-6 dark:bg-stone-900">
       <Greeting />
       <Quote />
+      <FrequentMoods />
       <ActionButton />
     </View>
   );
