@@ -19,21 +19,42 @@ interface JournalEntry {
 
 interface JournalStore {
   entries: Record<string, JournalEntry>;
-  setEntry: (day: string, content: string, title: string, moods: string[]) => void;
+  setEntry: (
+    day: string,
+    content: string,
+    title: string,
+    moods: string[],
+    files?: Attachment[]
+  ) => void;
+  setAttachments: (day: string, files: Attachment[]) => void;
   removeEntry: (day: string) => void;
   selectMood: (day: string, mood: MoodType) => void;
 }
 
-// Instantiate the store and assign to a variable (this is BOTH the hook and the store instance)
 const _journalStore = create<JournalStore>()(
   persist(
     (set, get) => ({
       entries: {},
-      setEntry: (day, content, title, moods) =>
+      setEntry: (day, content, title, moods, files) =>
         set((state) => ({
           entries: {
             ...state.entries,
-            [day]: { content, title, moods },
+            [day]: {
+              content,
+              title,
+              moods,
+              files: files ?? state.entries[day]?.files ?? [],
+            },
+          },
+        })),
+      setAttachments: (day, files) =>
+        set((state) => ({
+          entries: {
+            ...state.entries,
+            [day]: {
+              ...state.entries[day],
+              files,
+            },
           },
         })),
       removeEntry: (day) =>

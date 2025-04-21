@@ -28,11 +28,10 @@ export const useJournalEntry = (params: JournalEntryParams) => {
   const entries = useJournalStore((s) => s.entries);
   const setEntry = useJournalStore((s) => s.setEntry);
   const removeEntry = useJournalStore((s) => s.removeEntry);
+  const setAttachmentsStore = useJournalStore((s) => s.setAttachments);
 
-  // Compute entry locally
   const entry = entries[day] || { content: '', title: '', moods: [] };
 
-  // Rest of hook logic as you had (unchanged except for entrySelector removed)
   const [journalContent, setJournalContent] = useState(entry.content || content);
   const [journalTitle, setJournalTitle] = useState(entry.title || '');
   const [selectedMoods, setSelectedMoods] = useState<string[]>(entry.moods || []);
@@ -83,25 +82,40 @@ export const useJournalEntry = (params: JournalEntryParams) => {
     [selectedMoods]
   );
 
-  const addAttachment = useCallback((file: Attachment) => {
-    setAttachments((prev) => [...prev, file]);
-  }, []);
+  const addAttachment = useCallback(
+    (file: Attachment) => {
+      setAttachments((prev) => {
+        const updated = [...prev, file];
+        setAttachmentsStore(day, updated); // <--- Persist to store
+        return updated;
+      });
+    },
+    [day, setAttachmentsStore]
+  );
 
-  const removeAttachment = useCallback((uri: string) => {
-    setAttachments((prev) => prev.filter((f) => f.uri !== uri));
-  }, []);
+  const removeAttachment = useCallback(
+    (uri: string) => {
+      setAttachments((prev) => {
+        const updated = prev.filter((f) => f.uri !== uri);
+        setAttachmentsStore(day, updated); // <--- Persist to store
+        return updated;
+      });
+    },
+    [day, setAttachmentsStore]
+  );
 
   const handleSave = useCallback(() => {
     if (isSaving) return;
     if (
       journalContent === entry.content &&
       journalTitle === entry.title &&
-      deepEqual(selectedMoods, entry.moods)
+      deepEqual(selectedMoods, entry.moods) &&
+      deepEqual(attachments, entry.files || [])
     ) {
       return;
     }
     setIsSaving(true);
-    setEntry(day, journalContent, journalTitle, selectedMoods);
+    setEntry(day, journalContent, journalTitle, selectedMoods, attachments);
 
     setSaved(true);
     setTimeout(() => setSaved(false), SAVE_INDICATOR_DURATION);
@@ -114,6 +128,7 @@ export const useJournalEntry = (params: JournalEntryParams) => {
     journalContent,
     journalTitle,
     selectedMoods,
+    attachments,
     entry.content,
     entry.title,
     entry.moods,

@@ -3,7 +3,6 @@ import { useLocalSearchParams } from 'expo-router';
 import React, { useState, useRef } from 'react';
 import {
   View,
-  FlatList,
   ScrollView,
   TouchableOpacity,
   KeyboardAvoidingView,
@@ -75,50 +74,92 @@ export default function JournalEntryScreen() {
     if (!file.type?.startsWith('application')) return;
     addAttachment(file);
   };
+
   const addImageAttachment = (file: { uri: string; type: string; name: string }) => {
     if (!file.type?.startsWith('image')) return;
     addAttachment(file);
   };
 
-  const renderAttachment = ({ item }: { item: (typeof attachments)[0] }) => (
-    <TouchableOpacity
-      onLongPress={() => handleRemoveAttachment(item.uri)}
-      delayLongPress={500}
-      activeOpacity={0.8}
-      style={{
-        marginRight: 12,
-        alignItems: 'center',
-        justifyContent: 'center',
-      }}>
-      {item.type?.startsWith('image') ? (
-        <Image
-          source={{ uri: item.uri }}
-          style={{
-            width: 72,
-            height: 72,
-            borderRadius: 9,
-            backgroundColor: '#e5e5e5',
-          }}
-        />
-      ) : (
-        <View
-          style={{
-            width: 72,
-            height: 72,
-            borderRadius: 9,
-            backgroundColor: '#ece8e5',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: 6,
-          }}>
-          <Ionicons name="document-text" size={32} color="#b0a898" />
-          <Text numberOfLines={1} className="mt-1 px-1 text-[11px] text-stone-400">
-            {item.name}
-          </Text>
-        </View>
-      )}
-    </TouchableOpacity>
-  );
+  // Render attachment as card for ScrollView
+  const renderAttachmentCard = (item: (typeof attachments)[0]) => {
+    const CARD_STYLE = {
+      width: 72,
+      height: 72,
+      borderRadius: 9,
+      backgroundColor: '#ece8e5', // Metallic theme, matches doc
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: 6,
+      marginRight: 12,
+    } as const;
+
+    // Image attachments: use same metallic card but with image thumbnail
+    if (item.type?.startsWith('image') && item.uri) {
+      return (
+        <TouchableOpacity
+          key={item.uri}
+          onLongPress={() => handleRemoveAttachment(item.uri)}
+          delayLongPress={500}
+          activeOpacity={0.8}
+          style={{ alignItems: 'center', justifyContent: 'center', marginRight: 12 }}>
+          <View style={CARD_STYLE}>
+            <Image
+              source={{ uri: item.uri }}
+              style={{
+                width: 42,
+                height: 42,
+                borderRadius: 7,
+                backgroundColor: '#dbdbdb', // fallback shade for image bg
+                resizeMode: 'cover',
+              }}
+            />
+            <Text
+              numberOfLines={1}
+              style={{
+                marginTop: 6,
+                paddingHorizontal: 2,
+                fontSize: 11,
+                color: '#888',
+                width: '100%',
+                textAlign: 'center',
+              }}>
+              {item.name}
+            </Text>
+          </View>
+        </TouchableOpacity>
+      );
+    }
+
+    // Document attachments: use same base card, with icon
+    if (item.type?.startsWith('application') && item.uri) {
+      return (
+        <TouchableOpacity
+          key={item.uri}
+          onLongPress={() => handleRemoveAttachment(item.uri)}
+          delayLongPress={500}
+          activeOpacity={0.8}
+          style={{ alignItems: 'center', justifyContent: 'center', marginRight: 12 }}>
+          <View style={CARD_STYLE}>
+            <Ionicons name="document-text" size={32} color="#b0a898" />
+            <Text
+              numberOfLines={1}
+              style={{
+                marginTop: 6,
+                paddingHorizontal: 2,
+                fontSize: 11,
+                color: '#888',
+                width: '100%',
+                textAlign: 'center',
+              }}>
+              {item.name}
+            </Text>
+          </View>
+        </TouchableOpacity>
+      );
+    }
+
+    return null;
+  };
 
   return (
     <View className="flex-1 bg-[#F1EFEE] dark:bg-stone-900">
@@ -200,17 +241,22 @@ export default function JournalEntryScreen() {
               </View>
             )}
 
-            {/* Attachments */}
+            {/* ATTACHMENTS: Horizontally scrollable, custom layout for full control */}
             {attachments && attachments.length > 0 && (
-              <FlatList
-                data={attachments}
-                keyExtractor={(item) => item.uri}
-                renderItem={renderAttachment}
+              <ScrollView
                 horizontal
-                showsHorizontalScrollIndicator={false}
-                style={{ marginBottom: 16 }}
-                contentContainerStyle={{ alignItems: 'center' }}
-              />
+                showsHorizontalScrollIndicator={true}
+                contentContainerStyle={{
+                  alignItems: 'center',
+                  paddingVertical: 4,
+                  minHeight: 80,
+                }}
+                style={{
+                  marginBottom: 16,
+                  minHeight: 84,
+                }}>
+                {attachments.map(renderAttachmentCard)}
+              </ScrollView>
             )}
 
             <TextInput

@@ -63,7 +63,7 @@ export const BottomToolbar: React.FC<Props> = ({ onAttachDoc, onAttachImage }) =
   };
 
   const handleAttachDoc = async () => {
-    const res = await DocumentPicker.getDocumentAsync({
+    const res: DocumentPicker.DocumentPickerResult = await DocumentPicker.getDocumentAsync({
       type: [
         'application/pdf',
         'application/msword',
@@ -71,11 +71,12 @@ export const BottomToolbar: React.FC<Props> = ({ onAttachDoc, onAttachImage }) =
       ],
       copyToCacheDirectory: true,
     });
-    if (res.type === 'success') {
+
+    if (!res.canceled) {
       onAttachDoc({
-        uri: res.uri,
-        type: res.mimeType ?? 'application/octet-stream',
-        name: res.name,
+        uri: res.assets[0].uri,
+        type: res.assets[0].mimeType ?? 'application/octet-stream',
+        name: res.assets[0].name,
       });
     }
   };
