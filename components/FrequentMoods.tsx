@@ -2,8 +2,8 @@ import React, { useMemo } from 'react';
 import { View, ActivityIndicator } from 'react-native';
 
 import { getTopMoodsWithCountsFromEntries, MoodWithCount } from '~/app/journal/utils/moodAnalytics';
-import { useJournalStore } from '~/store/journal-store';
 import { Text } from '~/components/nativewindui/Text';
+import { useJournalStore } from '~/store/journal-store';
 
 export default function FrequentMoods() {
   const entries = useJournalStore((s) => s.entries);
@@ -15,7 +15,7 @@ export default function FrequentMoods() {
 
   if (!entries || Object.keys(entries).length === 0) {
     return (
-      <View className="mt-6">
+      <View className="mt-4">
         <Text className="mb-2 text-2xl font-normal text-stone-800 dark:text-stone-200">
           Your Mood Insights
         </Text>
@@ -30,7 +30,7 @@ export default function FrequentMoods() {
 
   if (topMoods.length === 0) {
     return (
-      <View className="mt-6">
+      <View className="mt-4">
         <Text className="mb-2 text-2xl font-normal text-stone-800 dark:text-stone-200">
           Your Mood Insights
         </Text>
@@ -42,7 +42,7 @@ export default function FrequentMoods() {
   }
 
   return (
-    <View className="mt-6">
+    <View className="mt-4">
       <Text className="mb-2 text-xl font-normal text-stone-800 dark:text-stone-200">
         Your Mood Insights
       </Text>

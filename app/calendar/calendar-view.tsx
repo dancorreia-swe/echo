@@ -1,65 +1,23 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useState, useMemo } from 'react';
-import {
-  View,
-  TouchableOpacity,
-  Dimensions,
-  StyleSheet,
-  Animated,
-  Modal,
-  FlatList,
-} from 'react-native';
+import { View, TouchableOpacity, StyleSheet, Animated, Modal, FlatList } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { MOOD_EMOJIS } from '../journal/utils/constants';
+import {
+  CALENDAR_HEIGHT,
+  CELL_HEIGHT,
+  CELL_WIDTH,
+  MONTHS,
+  WEEKS_PER_MONTH,
+  formatDateCalendarList,
+  isWritten,
+  moodMap,
+  parseLocalDateKey,
+} from './calendar-util';
 
 import { Text } from '~/components/nativewindui/Text';
 import { useJournalStore } from '~/store/journal-store';
-
-const { width } = Dimensions.get('window');
-const CELL_WIDTH = Math.floor(width / 7);
-const CELL_HEIGHT = 45;
-const WEEKS_PER_MONTH = 5;
-const CALENDAR_HEIGHT = CELL_HEIGHT * WEEKS_PER_MONTH + 12;
-
-const MONTHS = [
-  'January',
-  'February',
-  'March',
-  'April',
-  'May',
-  'June',
-  'July',
-  'August',
-  'September',
-  'October',
-  'November',
-  'December',
-];
-
-function formatDate(date: Date) {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
-}
-
-export function parseLocalDateKey(dateStr: string) {
-  const [y, m, d] = dateStr.split('-').map(Number);
-  return new Date(y, m - 1, d);
-}
-
-const moodMap = Object.fromEntries(MOOD_EMOJIS.map((m) => [m.key, m.emoji]));
-
-function isWritten(entry: any) {
-  return (
-    !!entry &&
-    ((entry.content && entry.content.trim() !== '') ||
-      (entry.title && entry.title.trim() !== '') ||
-      (Array.isArray(entry.moods) && entry.moods.length > 0))
-  );
-}
 
 export default function CalendarViewScreen() {
   const [currentMonth, setCurrentMonth] = useState(new Date());
@@ -67,7 +25,7 @@ export default function CalendarViewScreen() {
 
   const entries = useJournalStore((s) => s.entries);
 
-  const today = useMemo(() => formatDate(new Date()), []);
+  const today = useMemo(() => formatDateCalendarList(new Date()), []);
 
   const calendarDays = useMemo(() => {
     const year = currentMonth.getFullYear();
@@ -90,7 +48,7 @@ export default function CalendarViewScreen() {
     }
     for (let i = 1; i <= daysCount; i++) {
       const date = new Date(year, month, i);
-      const formattedDate = formatDate(date);
+      const formattedDate = formatDateCalendarList(date);
       const dayOfWeek = date.getDay();
       const isSunday = dayOfWeek === 0;
       const isSaturday = dayOfWeek === 6;
@@ -121,7 +79,8 @@ export default function CalendarViewScreen() {
     return Object.entries(entries)
       .filter(([dateStr, entry]: [string, any]) => {
         try {
-          const [yy, mm, dd] = dateStr.split('-').map(Number);
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+          const [yy, mm, _dd] = dateStr.split('-').map(Number);
           return mm - 1 === month && yy === year && isWritten(entry);
         } catch {
           return false;

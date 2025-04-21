@@ -5,6 +5,7 @@ import ActionButton from '~/components/ActionButton';
 import FrequentMoods from '~/components/FrequentMoods';
 import Quote from '~/components/Quote';
 import { Text } from '~/components/nativewindui/Text';
+import { JournalStreakChart } from './calendar/streak-view';
 
 export default function Screen() {
   return (
@@ -13,6 +14,7 @@ export default function Screen() {
       <Quote />
       <FrequentMoods />
       <ActionButton />
+      <JournalStreakChart />
     </View>
   );
 }
