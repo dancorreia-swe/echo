@@ -4,22 +4,23 @@ import { useState, useMemo } from 'react';
 import {
   View,
   TouchableOpacity,
-  ScrollView,
   Dimensions,
   StyleSheet,
   Animated,
   Modal,
+  FlatList,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Text } from '~/components/nativewindui/Text';
 import { useJournalStore } from '~/store/journal-store';
+import { MOOD_EMOJIS } from '../journal/utils/constants';
 
 const { width } = Dimensions.get('window');
 const CELL_WIDTH = Math.floor(width / 7);
 const CELL_HEIGHT = 45;
-const WEEKS_PER_MONTH = 6;
-const CALENDAR_HEIGHT = CELL_HEIGHT * WEEKS_PER_MONTH + 20;
+const WEEKS_PER_MONTH = 5;
+const CALENDAR_HEIGHT = CELL_HEIGHT * WEEKS_PER_MONTH + 12;
 
 const MONTHS = [
   'January',
@@ -42,6 +43,13 @@ function formatDate(date: Date) {
   const day = String(date.getDate()).padStart(2, '0');
   return `${year}-${month}-${day}`;
 }
+
+export function parseLocalDateKey(dateStr: string) {
+  const [y, m, d] = dateStr.split('-').map(Number);
+  return new Date(y, m - 1, d);
+}
+
+const moodMap = Object.fromEntries(MOOD_EMOJIS.map((m) => [m.key, m.emoji]));
 
 function isWritten(entry: any) {
   return (
@@ -119,7 +127,7 @@ export default function CalendarViewScreen() {
         }
       })
       .map(([dateStr, entry]) => {
-        const dateObj = new Date(dateStr);
+        const dateObj = parseLocalDateKey(dateStr);
         return {
           id: dateStr,
           date: dateStr,
@@ -128,6 +136,7 @@ export default function CalendarViewScreen() {
             ? entry.content.substring(0, 80) + (entry.content.length > 80 ? '...' : '')
             : '',
           formattedDate: dateObj.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }),
+          moods: entry.moods,
         };
       })
       .sort((a, b) => new Date(b.date).valueOf() - new Date(a.date).valueOf());
@@ -175,136 +184,147 @@ export default function CalendarViewScreen() {
           </TouchableOpacity>
         </View>
 
-        <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
-          <View className="pt-6">
-            <View className="mb-6 flex-row items-center justify-between px-4">
-              <TouchableOpacity
-                onPress={goToPreviousMonth}
-                className="h-10 w-10 items-center justify-center">
-                <Ionicons name="chevron-back" size={22} color="#555" />
-              </TouchableOpacity>
+        <View className="pt-6">
+          <View className="mb-6 flex-row items-center justify-between px-4">
+            <TouchableOpacity
+              onPress={goToPreviousMonth}
+              className="h-10 w-10 items-center justify-center">
+              <Ionicons name="chevron-back" size={22} color="#555" />
+            </TouchableOpacity>
 
-              <TouchableOpacity
-                onPress={() => setShowMonthPicker(true)}
-                activeOpacity={0.7}
-                className="px-4">
-                <Text className="text-center text-2xl font-bold text-black dark:text-white">
-                  {monthYearDisplay}
-                </Text>
-              </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => setShowMonthPicker(true)}
+              activeOpacity={0.7}
+              className="px-4">
+              <Text className="text-center text-2xl font-bold text-black dark:text-white">
+                {monthYearDisplay}
+              </Text>
+            </TouchableOpacity>
 
-              <TouchableOpacity
-                onPress={goToNextMonth}
-                className="h-10 w-10 items-center justify-center">
-                <Ionicons name="chevron-forward" size={22} color="#555" />
-              </TouchableOpacity>
+            <TouchableOpacity
+              onPress={goToNextMonth}
+              className="h-10 w-10 items-center justify-center">
+              <Ionicons name="chevron-forward" size={22} color="#555" />
+            </TouchableOpacity>
+          </View>
+
+          <View style={{ paddingHorizontal: 0 }}>
+            <View style={styles.weekdayHeader}>
+              {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, index) => (
+                <View key={index} style={styles.weekdayCell}>
+                  <Text
+                    className={`text-sm font-medium ${
+                      index === 0 || index === 6
+                        ? 'text-red-400 dark:text-red-500'
+                        : 'text-gray-400 dark:text-gray-500'
+                    }`}>
+                    {day}
+                  </Text>
+                </View>
+              ))}
             </View>
 
-            <View style={{ paddingHorizontal: 0 }}>
-              <View style={styles.weekdayHeader}>
-                {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, index) => (
-                  <View key={index} style={styles.weekdayCell}>
-                    <Text
-                      className={`text-sm font-medium ${
-                        index === 0 || index === 6
-                          ? 'text-red-400 dark:text-red-500'
-                          : 'text-gray-400 dark:text-gray-500'
-                      }`}>
-                      {day}
-                    </Text>
-                  </View>
+            <View style={{ height: CALENDAR_HEIGHT }}>
+              <Animated.View style={[styles.calendarGrid]}>
+                {calendarDays.map((item, index) => (
+                  <TouchableOpacity
+                    key={index}
+                    onPress={() => {
+                      if (item.day > 0) {
+                        router.push({
+                          pathname: '/journal/[day]',
+                          params: {
+                            day: item.formattedDate,
+                            isNew: !item.written ? 'true' : 'false',
+                          },
+                        });
+                      }
+                    }}
+                    disabled={item.day === 0}
+                    style={styles.calendarCell}>
+                    {item.day > 0 ? (
+                      <View style={styles.dayCellWrapper}>
+                        <Text
+                          className={`text-lg ${
+                            item.isWeekend
+                              ? 'text-red-400 dark:text-red-500'
+                              : 'text-gray-800 dark:text-gray-200'
+                          } ${
+                            item.formattedDate === today
+                              ? 'font-bold text-blue-500 dark:text-blue-400'
+                              : ''
+                          }`}>
+                          {item.day}
+                        </Text>
+                        {item.written && (
+                          <View className="mt-1 h-1.5 w-1.5 rounded-full bg-amber-500" />
+                        )}
+                      </View>
+                    ) : (
+                      <View style={styles.emptyCell} />
+                    )}
+                  </TouchableOpacity>
                 ))}
-              </View>
-
-              <View style={{ height: CALENDAR_HEIGHT }}>
-                <Animated.View style={[styles.calendarGrid]}>
-                  {calendarDays.map((item, index) => (
-                    <TouchableOpacity
-                      key={index}
-                      onPress={() => {
-                        if (item.day > 0) {
-                          router.push({
-                            pathname: '/journal/[day]',
-                            params: {
-                              day: item.formattedDate,
-                              isNew: !item.written ? 'true' : 'false',
-                            },
-                          });
-                        }
-                      }}
-                      disabled={item.day === 0}
-                      style={styles.calendarCell}>
-                      {item.day > 0 ? (
-                        <View style={styles.dayCellWrapper}>
-                          <Text
-                            className={`text-lg ${
-                              item.isWeekend
-                                ? 'text-red-400 dark:text-red-500'
-                                : 'text-gray-800 dark:text-gray-200'
-                            } ${
-                              item.formattedDate === today
-                                ? 'font-bold text-blue-500 dark:text-blue-400'
-                                : ''
-                            }`}>
-                            {item.day}
-                          </Text>
-                          {item.written && (
-                            <View className="mt-1 h-1.5 w-1.5 rounded-full bg-amber-500" />
-                          )}
-                        </View>
-                      ) : (
-                        <View style={styles.emptyCell} />
-                      )}
-                    </TouchableOpacity>
-                  ))}
-                </Animated.View>
-              </View>
+              </Animated.View>
             </View>
           </View>
+        </View>
 
-          <View className="border-t border-gray-200 dark:border-stone-800" />
+        <View className="border-t border-gray-200 dark:border-stone-800" />
 
-          <View className="mt-4 px-5 pb-8">
-            <Text className="mb-2 text-lg font-bold text-gray-800 dark:text-gray-200">
-              Journal Entries
-            </Text>
-
-            {recentEntries.length > 0 ? (
-              recentEntries.map((entry) => (
-                <TouchableOpacity
-                  key={entry.id}
-                  onPress={() => {
-                    router.push({
-                      pathname: '/journal/[day]',
-                      params: {
-                        day: entry.date,
-                        isNew: 'false',
-                      },
-                    });
-                  }}
-                  className="mb-4 border-b border-gray-100 pb-4 dark:border-stone-800">
-                  <View className="flex-row items-center justify-between">
-                    <Text className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                      {entry.formattedDate}
-                    </Text>
-                  </View>
-                  <Text className="mt-1 text-base font-semibold text-gray-800 dark:text-gray-200">
-                    {entry.title || 'Untitled'}
-                  </Text>
-                  <Text className="mt-1 text-sm text-gray-600 dark:text-gray-400" numberOfLines={2}>
-                    {entry.preview}
-                  </Text>
-                </TouchableOpacity>
-              ))
-            ) : (
-              <View className="items-center justify-center py-4">
-                <Text className="text-gray-400 dark:text-gray-500">
-                  No journal entries this month
+        <Text className=" p-4 pb-2 text-lg font-bold text-gray-800 dark:text-gray-200">
+          Journal Entries
+        </Text>
+        <FlatList
+          data={recentEntries}
+          keyExtractor={(entry) => entry.id}
+          style={{ maxHeight: 360 }}
+          showsVerticalScrollIndicator
+          renderItem={({ item: entry }) => (
+            <TouchableOpacity
+              onPress={() => {
+                router.push({
+                  pathname: '/journal/[day]',
+                  params: {
+                    day: entry.date,
+                    isNew: 'false',
+                  },
+                });
+              }}
+              className="mb-4 border-b border-gray-100 p-3 px-4 dark:border-stone-800">
+              <View className="flex-row items-start justify-between">
+                <Text className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                  {entry.formattedDate}
                 </Text>
+                <View className="flex-row items-center">
+                  {(Array.isArray(entry.moods) ? entry.moods : []).map((key) =>
+                    moodMap[key] ? (
+                      <Text
+                        key={key}
+                        style={{ fontSize: 16, marginLeft: 2 }}
+                        accessibilityLabel={key}>
+                        {moodMap[key]}
+                      </Text>
+                    ) : null
+                  )}
+                </View>
               </View>
-            )}
-          </View>
-        </ScrollView>
+              <Text className="mt-1 text-base font-semibold text-gray-800 dark:text-gray-200">
+                {entry.title || 'Untitled'}
+              </Text>
+              <Text className="mt-1 text-sm text-gray-600 dark:text-gray-400" numberOfLines={2}>
+                {entry.preview}
+              </Text>
+            </TouchableOpacity>
+          )}
+          ListEmptyComponent={
+            <View className="items-center justify-center py-4">
+              <Text className="text-gray-400 dark:text-gray-500">
+                No journal entries this month
+              </Text>
+            </View>
+          }
+        />
 
         <Modal
           visible={showMonthPicker}
