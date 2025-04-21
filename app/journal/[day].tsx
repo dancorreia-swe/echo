@@ -3,11 +3,14 @@ import { useLocalSearchParams } from 'expo-router';
 import React, { useState, useRef } from 'react';
 import {
   View,
+  FlatList,
   ScrollView,
   TouchableOpacity,
   KeyboardAvoidingView,
   Platform,
   StatusBar,
+  Image,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -25,9 +28,9 @@ import { TextInput } from '~/components/nativewindui/TextInput';
 export default function JournalEntryScreen() {
   const params = useLocalSearchParams<{
     day: string;
-    content: string;
-    isNew: string;
-    from: string;
+    content?: string;
+    isNew?: string;
+    from?: string;
   }>();
 
   const [menuVisible, setMenuVisible] = useState(false);
@@ -52,7 +55,70 @@ export default function JournalEntryScreen() {
     setContentConflictModalVisible,
     handleContentConflict,
     isNew,
+    addAttachment,
+    attachments,
+    removeAttachment,
   } = useJournalEntry(params);
+
+  const handleRemoveAttachment = (uri: string) => {
+    Alert.alert('Remove Attachment', 'Are you sure you want to remove this attachment?', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Remove',
+        style: 'destructive',
+        onPress: () => removeAttachment && removeAttachment(uri),
+      },
+    ]);
+  };
+
+  const addDocumentAttachment = (file: { uri: string; type: string; name: string }) => {
+    if (!file.type?.startsWith('application')) return;
+    addAttachment(file);
+  };
+  const addImageAttachment = (file: { uri: string; type: string; name: string }) => {
+    if (!file.type?.startsWith('image')) return;
+    addAttachment(file);
+  };
+
+  const renderAttachment = ({ item }: { item: (typeof attachments)[0] }) => (
+    <TouchableOpacity
+      onLongPress={() => handleRemoveAttachment(item.uri)}
+      delayLongPress={500}
+      activeOpacity={0.8}
+      style={{
+        marginRight: 12,
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}>
+      {item.type?.startsWith('image') ? (
+        <Image
+          source={{ uri: item.uri }}
+          style={{
+            width: 72,
+            height: 72,
+            borderRadius: 9,
+            backgroundColor: '#e5e5e5',
+          }}
+        />
+      ) : (
+        <View
+          style={{
+            width: 72,
+            height: 72,
+            borderRadius: 9,
+            backgroundColor: '#ece8e5',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: 6,
+          }}>
+          <Ionicons name="document-text" size={32} color="#b0a898" />
+          <Text numberOfLines={1} className="mt-1 px-1 text-[11px] text-stone-400">
+            {item.name}
+          </Text>
+        </View>
+      )}
+    </TouchableOpacity>
+  );
 
   return (
     <View className="flex-1 bg-[#F1EFEE] dark:bg-stone-900">
@@ -68,17 +134,14 @@ export default function JournalEntryScreen() {
               className="flex h-10 w-10 items-center justify-center rounded-full bg-[#F1EFEE] dark:bg-stone-800">
               <Ionicons name="chevron-back" size={24} color="#555" />
             </TouchableOpacity>
-
             <View className="flex-row space-x-3">
               <SaveStatusIndicator isSaving={isSaving} saved={saved} />
-
               <View>
                 <TouchableOpacity
                   onPress={() => setMenuVisible(!menuVisible)}
                   className="flex h-10 w-10 items-center justify-center rounded-full bg-[#F1EFEE] dark:bg-stone-800">
                   <Ionicons name="ellipsis-vertical" size={20} color="#555" />
                 </TouchableOpacity>
-
                 <MenuModal
                   visible={menuVisible}
                   onClose={() => setMenuVisible(false)}
@@ -107,7 +170,6 @@ export default function JournalEntryScreen() {
                 {formattedDate.fullDate}
               </Text>
             </View>
-
             <MoodEmojiPicker
               ref={moodPickerRef}
               selectedMoods={selectedMoods}
@@ -116,7 +178,8 @@ export default function JournalEntryScreen() {
             />
           </View>
 
-          <ScrollView className="flex-1 px-5 pt-2">
+          <ScrollView className="flex-1 px-5 pt-2" keyboardShouldPersistTaps="handled">
+            {/* Moods */}
             {selectedMoodObjects.length > 0 && (
               <View className="mb-4">
                 <View className="flex-row flex-wrap">
@@ -135,6 +198,19 @@ export default function JournalEntryScreen() {
                   {selectedMoodObjects.map((m) => m.label.toLowerCase()).join(', ')}
                 </Text>
               </View>
+            )}
+
+            {/* Attachments */}
+            {attachments && attachments.length > 0 && (
+              <FlatList
+                data={attachments}
+                keyExtractor={(item) => item.uri}
+                renderItem={renderAttachment}
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                style={{ marginBottom: 16 }}
+                contentContainerStyle={{ alignItems: 'center' }}
+              />
             )}
 
             <TextInput
@@ -157,7 +233,7 @@ export default function JournalEntryScreen() {
             />
           </ScrollView>
 
-          <BottomToolbar />
+          <BottomToolbar onAttachDoc={addDocumentAttachment} onAttachImage={addImageAttachment} />
 
           <ConflictModal
             visible={contentConflictModalVisible}

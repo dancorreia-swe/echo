@@ -63,7 +63,6 @@ export default function ActionButton() {
       toggleExpand();
     } else {
       if (selectedOption === 'journal') {
-
         const today = new Date();
         const year = today.getFullYear();
         const month = String(today.getMonth() + 1).padStart(2, '0');
@@ -173,7 +172,7 @@ export default function ActionButton() {
         className="flex size-16 items-center justify-center rounded-full bg-stone-500 dark:bg-stone-600"
         activeOpacity={0.8}
         style={{
-          zIndex: 3,
+          zIndex: 99,
           shadowColor: '#000',
           shadowOffset: { width: 0, height: 2 },
           shadowOpacity: 0.25,

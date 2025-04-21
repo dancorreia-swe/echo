@@ -11,9 +11,8 @@ import {
   MAX_MOOD_SELECTIONS,
 } from '../utils/constants';
 import { formatDate } from '../utils/dateFormat';
-import { invalidateTopMoodsCache } from '../utils/moodAnalytics';
 
-import { useJournalStore } from '~/store/journal-store';
+import { Attachment, useJournalStore } from '~/store/journal-store';
 
 export interface JournalEntryParams {
   day: string;
@@ -37,6 +36,7 @@ export const useJournalEntry = (params: JournalEntryParams) => {
   const [journalContent, setJournalContent] = useState(entry.content || content);
   const [journalTitle, setJournalTitle] = useState(entry.title || '');
   const [selectedMoods, setSelectedMoods] = useState<string[]>(entry.moods || []);
+  const [attachments, setAttachments] = useState<Attachment[]>(entry.files || []);
   const [isSaving, setIsSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const autoSaveTimer = useRef<NodeJS.Timeout | null>(null);
@@ -51,6 +51,7 @@ export const useJournalEntry = (params: JournalEntryParams) => {
     setJournalContent(entry.content || content);
     setJournalTitle(entry.title || '');
     setSelectedMoods(entry.moods || []);
+    setAttachments(entry.files || []);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [day]);
 
@@ -82,6 +83,14 @@ export const useJournalEntry = (params: JournalEntryParams) => {
     [selectedMoods]
   );
 
+  const addAttachment = useCallback((file: Attachment) => {
+    setAttachments((prev) => [...prev, file]);
+  }, []);
+
+  const removeAttachment = useCallback((uri: string) => {
+    setAttachments((prev) => prev.filter((f) => f.uri !== uri));
+  }, []);
+
   const handleSave = useCallback(() => {
     if (isSaving) return;
     if (
@@ -93,7 +102,7 @@ export const useJournalEntry = (params: JournalEntryParams) => {
     }
     setIsSaving(true);
     setEntry(day, journalContent, journalTitle, selectedMoods);
-    invalidateTopMoodsCache?.();
+
     setSaved(true);
     setTimeout(() => setSaved(false), SAVE_INDICATOR_DURATION);
     setTimeout(() => setIsSaving(false), 400);
@@ -204,5 +213,8 @@ export const useJournalEntry = (params: JournalEntryParams) => {
     setContentConflictModalVisible,
     handleContentConflict,
     isNew,
+    attachments,
+    addAttachment,
+    removeAttachment,
   };
 };

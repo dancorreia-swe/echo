@@ -4,10 +4,17 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 
 import { MAX_MOOD_SELECTIONS, MoodType } from '~/app/journal/utils/constants';
 
+export type Attachment = {
+  uri: string;
+  type: string;
+  name: string;
+};
+
 interface JournalEntry {
   content: string;
   title: string;
   moods: string[];
+  files?: Attachment[];
 }
 
 interface JournalStore {
