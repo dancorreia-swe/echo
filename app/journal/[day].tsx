@@ -17,10 +17,10 @@ import { useJournalEntry } from './hooks/useJournalEntry';
 import { MenuModal } from './menu-modal';
 import { MoodEmojiPicker, MoodEmojiPickerRef } from './mood-emoji-picker';
 import { SaveStatusIndicator } from './save-status-indicator';
+import { formatTime } from './utils/dateFormat';
 
 import { Text } from '~/components/nativewindui/Text';
 import { TextInput } from '~/components/nativewindui/TextInput';
-import { formatTime } from './utils/dateFormat';
 
 export default function JournalEntryScreen() {
   const params = useLocalSearchParams<{
@@ -90,11 +90,6 @@ export default function JournalEntryScreen() {
                     setMenuVisible(false);
                     handleShare();
                   }}
-                  onChangeMood={() => {
-                    setMenuVisible(false);
-                    moodPickerRef.current?.openPicker();
-                  }}
-                  hasMood={selectedMoods.length > 0}
                 />
               </View>
             </View>

@@ -86,7 +86,7 @@ export const MoodEmojiPicker = forwardRef<MoodEmojiPickerRef, MoodEmojiPickerPro
                     {selectedMoodObjects.map((mood) => (
                       <View
                         key={mood.key}
-                        className="m-1 flex-row items-center rounded-full bg-blue-100 px-3 py-1 dark:bg-blue-900">
+                        className="m-1 flex-row items-center rounded-full bg-stone-100 px-3 py-1 dark:bg-blue-900">
                         <Text className="mr-1">{mood.emoji}</Text>
                         <Text className="mr-1 text-xs text-stone-700 dark:text-stone-300">
                           {mood.label}
@@ -106,7 +106,7 @@ export const MoodEmojiPicker = forwardRef<MoodEmojiPickerRef, MoodEmojiPickerPro
                     renderItem={({ item }) => (
                       <TouchableOpacity
                         className={`m-1 flex-1 items-center rounded-lg p-3 ${
-                          isMoodSelected(item.key) ? 'bg-blue-100 dark:bg-blue-900' : ''
+                          isMoodSelected(item.key) ? 'bg-stone-200/50 dark:bg-blue-900' : ''
                         }`}
                         onPress={() => onSelectMood(item)}>
                         <Text className="mb-1 text-2xl">{item.emoji}</Text>
@@ -122,7 +122,7 @@ export const MoodEmojiPicker = forwardRef<MoodEmojiPickerRef, MoodEmojiPickerPro
                   <View className="mt-4 flex-row justify-end">
                     <TouchableOpacity
                       onPress={() => setModalVisible(false)}
-                      className="rounded-lg bg-primary px-4 py-2">
+                      className="rounded-lg bg-stone-500 px-4 py-2">
                       <Text className="font-medium text-white">Done</Text>
                     </TouchableOpacity>
                   </View>

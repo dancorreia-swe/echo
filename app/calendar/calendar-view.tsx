@@ -1,13 +1,10 @@
 import { Ionicons } from '@expo/vector-icons';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useFocusEffect } from '@react-navigation/native';
 import { router } from 'expo-router';
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useMemo } from 'react';
 import {
   View,
   TouchableOpacity,
   ScrollView,
-  ActivityIndicator,
   Dimensions,
   StyleSheet,
   Animated,
@@ -16,6 +13,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Text } from '~/components/nativewindui/Text';
+import { useJournalStore } from '~/store/journal-store';
 
 const { width } = Dimensions.get('window');
 const CELL_WIDTH = Math.floor(width / 7);
@@ -38,19 +36,29 @@ const MONTHS = [
   'December',
 ];
 
+function formatDate(date: Date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function isWritten(entry: any) {
+  return (
+    !!entry &&
+    ((entry.content && entry.content.trim() !== '') ||
+      (entry.title && entry.title.trim() !== '') ||
+      (Array.isArray(entry.moods) && entry.moods.length > 0))
+  );
+}
+
 export default function CalendarViewScreen() {
   const [currentMonth, setCurrentMonth] = useState(new Date());
-  const [writtenDays, setWrittenDays] = useState({});
-  const [loading, setLoading] = useState(true);
   const [showMonthPicker, setShowMonthPicker] = useState(false);
-  const [recentEntries, setRecentEntries] = useState([]);
-  const [initialRender, setInitialRender] = useState(true);
+
+  const entries = useJournalStore((s) => s.entries);
 
   const today = useMemo(() => formatDate(new Date()), []);
-
-  const monthYearDisplay = useMemo(() => {
-    return `${MONTHS[currentMonth.getMonth()]} ${currentMonth.getFullYear()}`;
-  }, [currentMonth]);
 
   const calendarDays = useMemo(() => {
     const year = currentMonth.getFullYear();
@@ -60,12 +68,17 @@ export default function CalendarViewScreen() {
     const daysCount = lastDay.getDate();
     const firstDayOfWeek = firstDay.getDay();
 
-    const days = [];
-
+    const days: {
+      day: number;
+      formattedDate: string;
+      isSunday?: boolean;
+      isSaturday?: boolean;
+      isWeekend?: boolean;
+      written?: boolean;
+    }[] = [];
     for (let i = 0; i < firstDayOfWeek; i++) {
       days.push({ day: 0, formattedDate: '' });
     }
-
     for (let i = 1; i <= daysCount; i++) {
       const date = new Date(year, month, i);
       const formattedDate = formatDate(date);
@@ -73,101 +86,56 @@ export default function CalendarViewScreen() {
       const isSunday = dayOfWeek === 0;
       const isSaturday = dayOfWeek === 6;
       const isWeekend = isSunday || isSaturday;
-
+      const entry = entries[formattedDate];
+      const written = isWritten(entry);
       days.push({
         day: i,
         formattedDate,
         isSunday,
         isSaturday,
         isWeekend,
+        written,
       });
     }
-
     const totalWeeks = WEEKS_PER_MONTH;
     const totalCells = totalWeeks * 7;
     const remainingCells = totalCells - days.length;
-
     for (let i = 0; i < remainingCells; i++) {
       days.push({ day: 0, formattedDate: '' });
     }
-
     return days;
-  }, [currentMonth]);
+  }, [currentMonth, entries]);
 
-  function formatDate(date: Date) {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
-  }
-
-  const loadJournalData = useCallback(async () => {
-    try {
-      setLoading(true);
-      const entries = {};
-      const journalEntries: any[] = [];
-
-      const keys = await AsyncStorage.getAllKeys();
-      const journalKeys = keys.filter((key) => key.startsWith('journal_entry_'));
-
-      for (const key of journalKeys) {
-        const date = key.replace('journal_entry_', '');
-        const journalEntry = await AsyncStorage.getItem(key);
-        const titleKey = `journal_title_${date}`;
-        const title = (await AsyncStorage.getItem(titleKey)) || 'Untitled';
-
-        if (journalEntry && journalEntry.trim().length > 0) {
-          entries[date] = true;
-
-          const [year, month, day] = date.split('-').map((num) => parseInt(num, 10));
-          const entryDate = new Date(year, month - 1, day);
-
-          if (
-            entryDate.getMonth() === currentMonth.getMonth() &&
-            entryDate.getFullYear() === currentMonth.getFullYear()
-          ) {
-            journalEntries.push({
-              id: date,
-              date,
-              title,
-              preview: journalEntry.substring(0, 80) + (journalEntry.length > 80 ? '...' : ''),
-              formattedDate: entryDate.toLocaleDateString(undefined, {
-                month: 'short',
-                day: 'numeric',
-              }),
-            });
-          }
+  const recentEntries = useMemo(() => {
+    const year = currentMonth.getFullYear();
+    const month = currentMonth.getMonth();
+    return Object.entries(entries)
+      .filter(([dateStr, entry]: [string, any]) => {
+        try {
+          const [yy, mm, dd] = dateStr.split('-').map(Number);
+          return mm - 1 === month && yy === year && isWritten(entry);
+        } catch {
+          return false;
         }
-      }
+      })
+      .map(([dateStr, entry]) => {
+        const dateObj = new Date(dateStr);
+        return {
+          id: dateStr,
+          date: dateStr,
+          title: entry.title || 'Untitled',
+          preview: entry.content
+            ? entry.content.substring(0, 80) + (entry.content.length > 80 ? '...' : '')
+            : '',
+          formattedDate: dateObj.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }),
+        };
+      })
+      .sort((a, b) => new Date(b.date).valueOf() - new Date(a.date).valueOf());
+  }, [currentMonth, entries]);
 
-      // Sort entries by date (newest first)
-      journalEntries.sort((a, b) => new Date(b.date) - new Date(a.date));
-
-      setWrittenDays(entries);
-      setRecentEntries(journalEntries);
-      setLoading(false);
-    } catch (error) {
-      console.error('Failed to load journal data:', error);
-      setLoading(false);
-    }
-  }, [currentMonth]);
-
-  useEffect(() => {
-    if (initialRender) {
-      setInitialRender(false);
-      return;
-    }
-
-    loadJournalData();
-  }, [currentMonth, initialRender, loadJournalData]);
-
-  useFocusEffect(
-    useCallback(() => {
-      if (!initialRender) {
-        loadJournalData();
-      }
-      return () => {};
-    }, [loadJournalData, initialRender])
+  const monthYearDisplay = useMemo(
+    () => `${MONTHS[currentMonth.getMonth()]} ${currentMonth.getFullYear()}`,
+    [currentMonth]
   );
 
   const goToPreviousMonth = () => {
@@ -175,18 +143,15 @@ export default function CalendarViewScreen() {
     newDate.setMonth(newDate.getMonth() - 1);
     setCurrentMonth(newDate);
   };
-
   const goToNextMonth = () => {
     const newDate = new Date(currentMonth);
     newDate.setMonth(newDate.getMonth() + 1);
     setCurrentMonth(newDate);
   };
-
   const goToToday = () => {
     setCurrentMonth(new Date());
   };
-
-  const selectMonth = (month) => {
+  const selectMonth = (month: number) => {
     const newDate = new Date(currentMonth);
     newDate.setMonth(month);
     setCurrentMonth(newDate);
@@ -252,53 +217,47 @@ export default function CalendarViewScreen() {
               </View>
 
               <View style={{ height: CALENDAR_HEIGHT }}>
-                {loading ? (
-                  <View className="items-center justify-center" style={{ height: CALENDAR_HEIGHT }}>
-                    <ActivityIndicator size="small" color="#555" />
-                  </View>
-                ) : (
-                  <Animated.View style={[styles.calendarGrid]}>
-                    {calendarDays.map((item, index) => (
-                      <TouchableOpacity
-                        key={index}
-                        onPress={() => {
-                          if (item.day > 0) {
-                            router.push({
-                              pathname: '/journal/[day]',
-                              params: {
-                                day: item.formattedDate,
-                                isNew: !(writtenDays[item.formattedDate] as any) ? 'true' : 'false',
-                              },
-                            });
-                          }
-                        }}
-                        disabled={item.day === 0}
-                        style={styles.calendarCell}>
-                        {item.day > 0 ? (
-                          <View style={styles.dayCellWrapper}>
-                            <Text
-                              className={`text-lg ${
-                                item.isWeekend
-                                  ? 'text-red-400 dark:text-red-500'
-                                  : 'text-gray-800 dark:text-gray-200'
-                              } ${
-                                item.formattedDate === today
-                                  ? 'font-bold text-blue-500 dark:text-blue-400'
-                                  : ''
-                              }`}>
-                              {item.day}
-                            </Text>
-                            {writtenDays[item.formattedDate] && (
-                              <View className="mt-1 h-1.5 w-1.5 rounded-full bg-amber-500" />
-                            )}
-                          </View>
-                        ) : (
-                          <View style={styles.emptyCell} />
-                        )}
-                      </TouchableOpacity>
-                    ))}
-                  </Animated.View>
-                )}
+                <Animated.View style={[styles.calendarGrid]}>
+                  {calendarDays.map((item, index) => (
+                    <TouchableOpacity
+                      key={index}
+                      onPress={() => {
+                        if (item.day > 0) {
+                          router.push({
+                            pathname: '/journal/[day]',
+                            params: {
+                              day: item.formattedDate,
+                              isNew: !item.written ? 'true' : 'false',
+                            },
+                          });
+                        }
+                      }}
+                      disabled={item.day === 0}
+                      style={styles.calendarCell}>
+                      {item.day > 0 ? (
+                        <View style={styles.dayCellWrapper}>
+                          <Text
+                            className={`text-lg ${
+                              item.isWeekend
+                                ? 'text-red-400 dark:text-red-500'
+                                : 'text-gray-800 dark:text-gray-200'
+                            } ${
+                              item.formattedDate === today
+                                ? 'font-bold text-blue-500 dark:text-blue-400'
+                                : ''
+                            }`}>
+                            {item.day}
+                          </Text>
+                          {item.written && (
+                            <View className="mt-1 h-1.5 w-1.5 rounded-full bg-amber-500" />
+                          )}
+                        </View>
+                      ) : (
+                        <View style={styles.emptyCell} />
+                      )}
+                    </TouchableOpacity>
+                  ))}
+                </Animated.View>
               </View>
             </View>
           </View>
