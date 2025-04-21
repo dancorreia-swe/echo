@@ -12,9 +12,10 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { MOOD_EMOJIS } from '../journal/utils/constants';
+
 import { Text } from '~/components/nativewindui/Text';
 import { useJournalStore } from '~/store/journal-store';
-import { MOOD_EMOJIS } from '../journal/utils/constants';
 
 const { width } = Dimensions.get('window');
 const CELL_WIDTH = Math.floor(width / 7);
