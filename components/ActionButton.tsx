@@ -94,8 +94,7 @@ export default function ActionButton() {
   }, [isExpanded, animation]);
 
   return (
-    <View className="absolute bottom-8 right-8">
-      {/* Overlay to detect outside clicks */}
+    <View className="absolute bottom-8 right-8 z-10">
 
       {isExpanded && (
         <TouchableOpacity
@@ -114,7 +113,6 @@ export default function ActionButton() {
 
       {/* Expandable options */}
       <View className="absolute bottom-0 right-0">
-        {/* Background pill that extends */}
         <Animated.View
           className="bg-stone-500 dark:bg-stone-600"
           style={{
