@@ -245,7 +245,7 @@ export default function JournalEntryScreen() {
             {attachments && attachments.length > 0 && (
               <ScrollView
                 horizontal
-                showsHorizontalScrollIndicator={true}
+                showsHorizontalScrollIndicator
                 contentContainerStyle={{
                   alignItems: 'center',
                   paddingVertical: 4,

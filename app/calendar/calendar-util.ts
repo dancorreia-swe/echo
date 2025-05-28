@@ -1,4 +1,5 @@
 import { Dimensions } from 'react-native';
+
 import { MOOD_EMOJIS } from '../journal/utils/constants';
 
 const { width } = Dimensions.get('window');
@@ -97,7 +98,7 @@ export function getStreaks(entries: Record<string, any>): {
   }
   // Find current streak (must include today or yesterday)
   let currentStreak = 0;
-  let date = new Date();
+  const date = new Date();
   for (;;) {
     const str = formatDate(date);
     if (datesSet.has(str)) {
@@ -120,7 +121,7 @@ export function getHorizontalCalendarMatrix(
   start.setDate(today.getDate() - (weekCount * 7 - 1));
   // Fill [ [week0(days...)], [week1(days...)], ... ]
   const weeks: { date: string; hasEntry: boolean }[][] = [];
-  let cursor = new Date(start);
+  const cursor = new Date(start);
   for (let w = 0; w < weekCount; w++) {
     const week: { date: string; hasEntry: boolean }[] = [];
     for (let d = 0; d < 7; d++) {

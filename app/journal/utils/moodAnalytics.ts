@@ -1,4 +1,5 @@
 import { MoodType, MOOD_EMOJIS } from './constants';
+
 import { journalStoreInstance } from '~/store/journal-store';
 
 export interface MoodWithCount extends MoodType {

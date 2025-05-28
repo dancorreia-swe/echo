@@ -1,13 +1,36 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import { View } from 'react-native';
+
+import { JournalStreakChart } from './calendar/streak-view';
 
 import ActionButton from '~/components/ActionButton';
 import FrequentMoods from '~/components/FrequentMoods';
 import Quote from '~/components/Quote';
+import Auth from '~/components/auth/sign-in';
 import { Text } from '~/components/nativewindui/Text';
-import { JournalStreakChart } from './calendar/streak-view';
+import { useJournalStore } from '~/store/journal-store';
 
 export default function Screen() {
+  const { session, loading, initialized, initializeAuth } = useJournalStore();
+
+  useEffect(() => {
+    if (!initialized) {
+      initializeAuth();
+    }
+  }, [initialized, initializeAuth]);
+
+  if (loading || !initialized) {
+    return (
+      <View className="flex-1 items-center justify-center bg-white dark:bg-stone-900">
+        <Text className="text-stone-600 dark:text-stone-400">Loading...</Text>
+      </View>
+    );
+  }
+
+  if (!session) {
+    return <Auth />;
+  }
+
   return (
     <View className="flex-1 bg-white p-4 px-8 pt-6 dark:bg-stone-900">
       <Greeting />

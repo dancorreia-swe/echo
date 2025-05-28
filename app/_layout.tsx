@@ -13,6 +13,7 @@ import { CalendarBar } from '~/components/CalendarBar';
 import { ThemeToggle } from '~/components/ThemeToggle';
 import { cn } from '~/lib/cn';
 import { useColorScheme, useInitialAndroidBarSync } from '~/lib/useColorScheme';
+import { useJournalStore } from '~/store/journal-store';
 import { NAV_THEME } from '~/theme';
 
 export {
@@ -59,8 +60,13 @@ const SCREEN_OPTIONS = {
   animation: 'ios_from_right', // for android
 } as const;
 
+function DynamicHeader() {
+  const { session } = useJournalStore();
+  return session ? <CalendarBar /> : null;
+}
+
 const INDEX_OPTIONS = {
-  header: () => <CalendarBar />,
+  header: () => <DynamicHeader />,
 } as const;
 
 export function SettingsIcon() {

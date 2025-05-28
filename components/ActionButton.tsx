@@ -95,7 +95,6 @@ export default function ActionButton() {
 
   return (
     <View className="absolute bottom-8 right-8 z-10">
-
       {isExpanded && (
         <TouchableOpacity
           activeOpacity={0}
