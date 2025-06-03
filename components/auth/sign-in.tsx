@@ -1,5 +1,6 @@
+import { Ionicons } from '@expo/vector-icons';
 import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-signin';
-import { Icon } from '@roninoss/icons';
+import { cssInterop } from 'nativewind';
 import { useState, useEffect } from 'react';
 import { Alert, View } from 'react-native';
 
@@ -8,6 +9,13 @@ import { Text } from '../nativewindui/Text';
 import { TextInput } from '../nativewindui/TextInput';
 
 import { supabase } from '~/utils/supabase';
+
+cssInterop(Ionicons, {
+  className: {
+    target: 'style',
+    nativeStyleToProp: { height: true, width: true, size: true },
+  },
+});
 
 export default function Auth() {
   const [email, setEmail] = useState('');
@@ -137,7 +145,7 @@ export default function Auth() {
           disabled={loading}
           onPress={() => signInWithGoogle()}
           className="flex-row items-center gap-3">
-          <Icon name="logo-google" size={20} />
+          <Ionicons className="text-blue-500" name="logo-google" size={20} />
           <Text>Continue with Google</Text>
         </Button>
       </View>

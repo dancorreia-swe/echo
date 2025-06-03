@@ -3,6 +3,7 @@ import { BottomSheetModal, BottomSheetView, BottomSheetBackdrop } from '@gorhom/
 import { cssInterop } from 'nativewind';
 import { forwardRef, useCallback, useImperativeHandle, useRef } from 'react';
 import { View, Pressable, Image } from 'react-native';
+import { router } from 'expo-router';
 
 import { Button } from './nativewindui/Button';
 import { Text } from './nativewindui/Text';
@@ -40,6 +41,11 @@ const ProfileSettingsSheet = forwardRef<ProfileSettingsSheetRef, ProfileSettings
       } catch (error) {
         console.error('Logout error:', error);
       }
+    };
+
+    const handleShopPress = () => {
+      bottomSheetModalRef.current?.dismiss();
+      router.push('/shop');
     };
 
     const getUserDisplayName = () => {
@@ -144,7 +150,26 @@ const ProfileSettingsSheet = forwardRef<ProfileSettingsSheetRef, ProfileSettings
             </View>
           </View>
 
-          {/* Logout Button */}
+          <View className="mb-6">
+            <Text className="mb-3 text-sm font-medium text-stone-700 dark:text-stone-300">
+              Sponsor
+            </Text>
+
+            <View className="rounded-lg border border-stone-200 dark:border-stone-700">
+              <Pressable
+                onPress={handleShopPress}
+                className="flex-row items-center p-4 active:bg-stone-50 dark:active:bg-stone-700/50">
+                <Ionicons
+                  name="cafe-outline"
+                  size={20}
+                  className="mr-3 text-stone-600 dark:text-stone-400"
+                />
+                <Text className="flex-1 text-stone-900 dark:text-white">Sponsor</Text>
+                <Ionicons name="chevron-forward" size={16} className="text-stone-400" />
+              </Pressable>
+            </View>
+          </View>
+
           <Button
             onPress={handleLogout}
             className="flex-row items-center justify-center gap-2 border-red-400 bg-red-500/20">
